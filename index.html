@@ -61,7 +61,7 @@
 <template id="order-template">
     <div class="order-block">
         <div class="order-title"></div>
-        <div class="same-sender-area" style="display:none;"><label><input type="checkbox" class="same-sender-check">【1件目のご依頼主と同じにする】</label></div>
+        <div class="same-sender-area" style="display:none;"><label><input type="checkbox" class="same-sender-check">【1件目とご依頼主が同じ】</label></div>
         <div class="section-title">▼ 注文の品</div>
         <div class="items-container"></div>
         <button type="button" class="add-item-btn">＋ 別の品種・サイズを追加する</button>
@@ -72,7 +72,7 @@
         <div class="form-group"><label>ご連絡先（電話番号）</label><input type="tel" class="to-tel" placeholder="例：090-0000-0000" required></div>
         <div class="sender-section">
             <div class="section-title">▼ ご依頼主</div>
-            <div class="home-delivery-area"><label><input type="checkbox" class="home-delivery-check">【送り先と同じにする（ご自宅への配送）】</label></div>
+            <div class="home-delivery-area"><label><input type="checkbox" class="home-delivery-check">【ご自宅への配送の場合】</label></div>
             <div class="sender-inputs">
                 <div class="form-group"><label>郵便番号</label><input type="text" class="from-zip" placeholder="例：987-6543" required></div>
                 <div class="form-group"><label>住所</label><input type="text" class="from-addr" placeholder="例：東京都稲城市東長沼2125-3" required></div>
@@ -187,9 +187,9 @@ document.getElementById('deliveryForm').addEventListener('submit', e => {
         }
 
         if (isSame) {
-            body += ` 1件目のご依頼主と同じ\r\n 郵便番号：${firstSender.z}\r\n 住所：${firstSender.a}\r\n お名前：${firstSender.n}\r\n ご連絡先：${firstSender.t}\r\n\r\n`;
+            body += ` 1件目とご依頼主が同じ\r\n 郵便番号：${firstSender.z}\r\n 住所：${firstSender.a}\r\n お名前：${firstSender.n}\r\n ご連絡先：${firstSender.t}\r\n\r\n`;
         } else if (isHome) {
-            body += ` 送り先と同じ（ご自宅への配送）\r\n 郵便番号：${toZip}\r\n 住所：${toAddr}\r\n お名前：${toName}\r\n ご連絡先：${toTel}\r\n\r\n`;
+            body += ` ご自宅への配送の場合\r\n 郵便番号：${toZip}\r\n 住所：${toAddr}\r\n お名前：${toName}\r\n ご連絡先：${toTel}\r\n\r\n`;
         } else {
             body += ` 郵便番号：${v('.from-zip')}\r\n 住所：${v('.from-addr')}\r\n お名前：${v('.from-name')}\r\n ご連絡先：${v('.from-tel')}\r\n\r\n`;
         }
