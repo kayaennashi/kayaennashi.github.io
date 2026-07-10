@@ -1,4 +1,3 @@
-加弥園
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
