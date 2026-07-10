@@ -61,7 +61,7 @@
 <template id="order-template">
     <div class="order-block">
         <div class="order-title"></div>
-        <div class="same-sender-area" style="display:none;"><label><input type="checkbox" class="same-sender-check">【1件目とご依頼主が同じ】</label></div>
+        <div class="same-sender-area" style="display:none;"><label><input type="checkbox" class="same-sender-check">【1件目とご依頼主が同じ場合】</label></div>
         <div class="section-title">▼ 注文の品</div>
         <div class="items-container"></div>
         <button type="button" class="add-item-btn">＋ 別の品種・サイズを追加する</button>
@@ -187,7 +187,7 @@ document.getElementById('deliveryForm').addEventListener('submit', e => {
         }
 
         if (isSame) {
-            body += ` 1件目とご依頼主が同じ\r\n 郵便番号：${firstSender.z}\r\n 住所：${firstSender.a}\r\n お名前：${firstSender.n}\r\n ご連絡先：${firstSender.t}\r\n\r\n`;
+            body += ` 1件目とご依頼主が同じ場合\r\n 郵便番号：${firstSender.z}\r\n 住所：${firstSender.a}\r\n お名前：${firstSender.n}\r\n ご連絡先：${firstSender.t}\r\n\r\n`;
         } else if (isHome) {
             body += ` ご自宅への配送の場合\r\n 郵便番号：${toZip}\r\n 住所：${toAddr}\r\n お名前：${toName}\r\n ご連絡先：${toTel}\r\n\r\n`;
         } else {
