@@ -94,6 +94,13 @@ const itemData = {
     "新高": ["平箱", "二段箱", "3kg箱（4個入）", "特4kg箱（5個入）"], "高尾": ["2kg箱", "3kg箱"], "シャインマスカット": ["1kg箱", "2kg箱"], "富士の輝": ["1kg箱", "2kg箱"]
 };
 
+// ==========================================
+// 【受付停止の設定】
+// 受付を停止したい品種名を「"」と「,」で区切って記述します。
+// 例: const stoppedVarieties = ["幸水", "シャインマスカット"];
+// ==========================================
+const stoppedVarieties = ["幸水"];
+
 document.addEventListener('DOMContentLoaded', () => {
     addOrderBlock();
     document.getElementById('addOrderBtn').addEventListener('click', addOrderBlock);
@@ -108,7 +115,15 @@ function createItemBlock() {
     catSel.addEventListener('change', function() {
         varSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
         sizeSel.innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
-        categoryData[this.value]?.forEach(v => varSel.insertAdjacentHTML('beforeend', `<option value="${v}">${v}</option>`));
+        
+        categoryData[this.value]?.forEach(v => {
+            // 受付停止リストに含まれているか判定
+            const isStopped = stoppedVarieties.includes(v);
+            const label = isStopped ? `${v}（受付停止中）` : v;
+            const disabledAttr = isStopped ? 'disabled' : '';
+            
+            varSel.insertAdjacentHTML('beforeend', `<option value="${v}" ${disabledAttr}>${label}</option>`);
+        });
     });
 
     varSel.addEventListener('change', function() {
