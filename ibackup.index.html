@@ -54,7 +54,7 @@
         <div class="form-group"><label>種類</label><select class="item-category" required><option value="" disabled selected>選択してください</option></select></div>
         <div class="form-group"><label>品種</label><select class="item-variety" required><option value="" disabled selected>種類を先に選択してください</option></select></div>
         <div class="form-group"><label>サイズ</label><select class="item-size" required><option value="" disabled selected>品種を先に選択してください</option></select></div>
-        <div class="form-group"><label>個数</label><input type="number" class="item-quantity" min="1" value="1" required></div>
+        <div class="form-group"><label>箱数</label><input type="number" class="item-quantity" min="1" value="1" required></div>
     </div>
 </template>
 
@@ -90,9 +90,16 @@ const categoryData = {
 };
 
 const itemData = {
-    "幸水": ["平箱", "二段箱"], "豊水": ["平箱", "二段箱"], "あきづき": ["平箱", "二段箱"], "稲城": ["平箱", "二段箱", "3kg箱（5個入）", "4kg箱（6個入）"],
-    "新高": ["平箱", "二段箱", "3kg箱（4個入）", "特4kg箱（5個入）"], "高尾": ["2kg箱", "3kg箱"], "シャインマスカット": ["1kg箱", "2kg箱"], "富士の輝": ["1kg箱", "2kg箱"]
+    "幸水": ["平箱", "二段箱"], "豊水": ["平箱", "二段箱"], "あきづき": ["平箱", "二段箱"], "稲城": ["平箱", "二段箱", "3kg箱（5玉）", "特4kg箱（6玉）"],
+    "新高": ["平箱", "二段箱", "3kg箱（4玉）", "特4kg箱（5玉）"], "高尾": ["2kg箱", "3kg箱"], "シャインマスカット": ["1kg箱", "2kg箱"], "富士の輝": ["1kg箱", "2kg箱"]
 };
+
+// ==========================================
+// 【受付停止の設定】
+// 受付を停止したい品種名を「"」と「,」で区切って記述します。
+// 例: const stoppedVarieties = ["幸水", "シャインマスカット"];
+// ==========================================
+const stoppedVarieties = ["稲城"];
 
 document.addEventListener('DOMContentLoaded', () => {
     addOrderBlock();
@@ -108,7 +115,15 @@ function createItemBlock() {
     catSel.addEventListener('change', function() {
         varSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
         sizeSel.innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
-        categoryData[this.value]?.forEach(v => varSel.insertAdjacentHTML('beforeend', `<option value="${v}">${v}</option>`));
+        
+        categoryData[this.value]?.forEach(v => {
+            // 受付停止リストに含まれているか判定
+            const isStopped = stoppedVarieties.includes(v);
+            const label = isStopped ? `${v}（受付停止中）` : v;
+            const disabledAttr = isStopped ? 'disabled' : '';
+            
+            varSel.insertAdjacentHTML('beforeend', `<option value="${v}" ${disabledAttr}>${label}</option>`);
+        });
     });
 
     varSel.addEventListener('change', function() {
@@ -171,7 +186,7 @@ document.getElementById('deliveryForm').addEventListener('submit', e => {
         body += `【${num}件目】\r\n▼ 注文の品\r\n`;
 
         block.querySelectorAll('.item-block').forEach((item, i) => {
-            body += ` ［品物${i + 1}］\r\n  種類：${item.querySelector('.item-category').value}\r\n  品種：${item.querySelector('.item-variety').value}\r\n  サイズ：${item.querySelector('.item-size').value}\r\n  個数：${item.querySelector('.item-quantity').value}個\r\n`;
+            body += ` ［品物${i + 1}］\r\n  種類：${item.querySelector('.item-category').value}\r\n  品種：${item.querySelector('.item-variety').value}\r\n  サイズ：${item.querySelector('.item-size').value}\r\n  箱数：${item.querySelector('.item-quantity').value}個\r\n`;
         });
 
         const v = sel => block.querySelector(sel).value;
