@@ -54,7 +54,7 @@
         <div class="form-group"><label>種類</label><select class="item-category" required><option value="" disabled selected>選択してください</option></select></div>
         <div class="form-group"><label>品種</label><select class="item-variety" required><option value="" disabled selected>種類を先に選択してください</option></select></div>
         <div class="form-group"><label>サイズ</label><select class="item-size" required><option value="" disabled selected>品種を先に選択してください</option></select></div>
-        <div class="form-group"><label>個数</label><input type="number" class="item-quantity" min="1" value="1" required></div>
+        <div class="form-group"><label>箱数</label><input type="number" class="item-quantity" min="1" value="1" required></div>
     </div>
 </template>
 
@@ -186,7 +186,7 @@ document.getElementById('deliveryForm').addEventListener('submit', e => {
         body += `【${num}件目】\r\n▼ 注文の品\r\n`;
 
         block.querySelectorAll('.item-block').forEach((item, i) => {
-            body += ` ［品物${i + 1}］\r\n  種類：${item.querySelector('.item-category').value}\r\n  品種：${item.querySelector('.item-variety').value}\r\n  サイズ：${item.querySelector('.item-size').value}\r\n  個数：${item.querySelector('.item-quantity').value}個\r\n`;
+            body += ` ［品物${i + 1}］\r\n  種類：${item.querySelector('.item-category').value}\r\n  品種：${item.querySelector('.item-variety').value}\r\n  サイズ：${item.querySelector('.item-size').value}\r\n  箱数：${item.querySelector('.item-quantity').value}個\r\n`;
         });
 
         const v = sel => block.querySelector(sel).value;
