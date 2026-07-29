@@ -55,7 +55,7 @@
         <button type="button" class="remove-item-btn">削除</button>
         <div class="form-group"><label>種類</label><select class="item-category" required><option value="" disabled selected>選択してください</option></select></div>
         <div class="form-group"><label>品種</label><select class="item-variety" required><option value="" disabled selected>種類を先に選択してください</option></select></div>
-        <div class="form-group"><label>サイズ</label><select class="item-size" required><option value="" disabled selected>品種を先に選択してください</option></select></div>
+        <div class="form-group"><label>箱サイズ</label><select class="item-size" required><option value="" disabled selected>品種を先に選択してください</option></select></div>
         <div class="form-group"><label>箱数</label><input type="number" class="item-quantity" min="1" value="1" required></div>
     </div>
 </template>
@@ -68,8 +68,8 @@
         <div class="section-title">▼ 注文の品</div>
         <div class="items-container"></div>
         
-        <button type="button" class="add-item-btn">＋ 別の品種・サイズを追加する</button>
-        <div class="shipping-notice">※別の品種・サイズを追加する場合、送料が別に掛かります。</div>
+        <button type="button" class="add-item-btn">＋ 別の品種・箱サイズを追加する</button>
+        <div class="shipping-notice">※別の品種・箱サイズを追加する場合、送料が別に掛かる場合がございます。</div>
         
         <div class="section-title">▼ 送り先</div>
         <div class="form-group"><label>郵便番号</label><input type="text" class="to-zip" placeholder="例：123-4567" required></div>
@@ -98,7 +98,7 @@ const itemData = {
     "幸水": ["平箱", "二段箱"], "豊水": ["平箱", "二段箱"], "あきづき": ["平箱", "二段箱"], "稲城": ["平箱", "二段箱", "3kg箱（5玉）", "特4kg箱（6玉）"],
     "新高": ["平箱", "二段箱", "3kg箱（4玉）", "特4kg箱（5玉）"], "高尾": ["2kg箱", "3kg箱"], "シャインマスカット": ["1kg箱", "2kg箱"], "富士の輝": ["1kg箱", "2kg箱"]
 };
-// 受付停止の設定（カテゴリー、品種、品種:サイズ が指定可能）
+// 受付停止の設定（カテゴリー、品種、品種:箱サイズ が指定可能）
 const stoppedItems = ["梨"];
 
 // ==========================================
@@ -153,7 +153,7 @@ ordersContainer.addEventListener('change', e => {
         sizeSel.innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
         (categoryData[t.value] || []).forEach(v => varSel.insertAdjacentHTML('beforeend', createOption(v, stoppedItems.includes(v))));
     }
-    // 品種が変わった時 -> サイズの選択肢を生成
+    // 品種が変わった時 -> 箱サイズの選択肢を生成
     else if (t.classList.contains('item-variety')) {
         const sizeSel = itemBlock.querySelector('.item-size');
         sizeSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
@@ -206,7 +206,7 @@ document.getElementById('deliveryForm').addEventListener('submit', e => {
         
         // 品物リストのテキスト化
         const itemsText = Array.from(block.querySelectorAll('.item-block')).map((item, i) => 
-            ` ［品物${i + 1}］\r\n  品種：${item.querySelector('.item-variety').value}\r\n  サイズ：${item.querySelector('.item-size').value}\r\n  箱数：${item.querySelector('.item-quantity').value}箱`
+            ` ［品物${i + 1}］\r\n  品種：${item.querySelector('.item-variety').value}\r\n  箱サイズ：${item.querySelector('.item-size').value}\r\n  箱数：${item.querySelector('.item-quantity').value}箱`
         ).join('\r\n');
 
         // ご依頼主リストのテキスト化
