@@ -38,7 +38,7 @@
         <button type="button" id="addOrderBtn" class="add-btn">＋ お届け先を追加する</button>
         <div class="form-group" style="margin-top: 25px;">
             <label>その他ご要望など</label>
-            <textarea id="formNotes" rows="4" placeholder="例：ご不在期間、配送日希望、ご不明な点など"></textarea>
+            <textarea id="formNotes" rows="4" placeholder="例：ご不在期間、ご不明な点など"></textarea>
         </div>
         <button type="submit" class="submit-btn">メールを作成する</button>
         
@@ -96,16 +96,19 @@ const itemData = {
 
 // ==========================================
 // 【受付停止の設定】
-// 受付を停止したい品種名を「"」と「,」で区切って記述します。
-// 例: const stoppedVarieties = ["幸水", "シャインマスカット"];
+// 1. 品種全体を止める場合：「"品種名","品種名2"」
+// 2. 特定サイズのみ止める場合：「"品種名:サイズ名"」
+// すべて再開の場合： stoppedItems = [];    
 // ==========================================
-const stoppedVarieties = ["稲城"];
+const stoppedItems = [
+    "幸水", "豊水", "あきづき", "稲城", "新高"
+];
 
 document.addEventListener('DOMContentLoaded', () => {
     addOrderBlock();
     document.getElementById('addOrderBtn').addEventListener('click', addOrderBlock);
 });
-
+    
 function createItemBlock() {
     const clone = document.getElementById('item-template').content.cloneNode(true);
     const catSel = clone.querySelector('.item-category'), varSel = clone.querySelector('.item-variety'), sizeSel = clone.querySelector('.item-size');
@@ -117,18 +120,27 @@ function createItemBlock() {
         sizeSel.innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
         
         categoryData[this.value]?.forEach(v => {
-            // 受付停止リストに含まれているか判定
-            const isStopped = stoppedVarieties.includes(v);
-            const label = isStopped ? `${v}（受付停止中）` : v;
-            const disabledAttr = isStopped ? 'disabled' : '';
+            // 品種そのものが停止対象か判定
+            const isVarietyStopped = stoppedItems.includes(v);
+            const label = isVarietyStopped ? `${v}（受付停止中）` : v;
+            const disabledAttr = isVarietyStopped ? 'disabled' : '';
             
-            varSel.insertAdjacentHTML('beforeend', `<option value="${v}" ${disabledAttr}>${label}</option>`);
+varSel.insertAdjacentHTML('beforeend', `<option value="${v}" ${disabledAttr}>${label}</option>`);
         });
     });
 
     varSel.addEventListener('change', function() {
         sizeSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
-        itemData[this.value]?.forEach(s => sizeSel.insertAdjacentHTML('beforeend', `<option value="${s}">${s}</option>`));
+        const selectedVariety = this.value;
+
+        itemData[selectedVariety]?.forEach(s => {
+            // 「品種名:サイズ名」の組み合わせが停止対象か判定
+            const isSizeStopped = stoppedItems.includes(`${selectedVariety}:${s}`);
+            const label = isSizeStopped ? `${s}（受付停止中）` : s;
+            const disabledAttr = isSizeStopped ? 'disabled' : '';
+
+            sizeSel.insertAdjacentHTML('beforeend', `<option value="${s}" ${disabledAttr}>${label}</option>`);
+        });
     });
     return clone;
 }
@@ -186,7 +198,7 @@ document.getElementById('deliveryForm').addEventListener('submit', e => {
         body += `【${num}件目】\r\n▼ 注文の品\r\n`;
 
         block.querySelectorAll('.item-block').forEach((item, i) => {
-            body += ` ［品物${i + 1}］\r\n  種類：${item.querySelector('.item-category').value}\r\n  品種：${item.querySelector('.item-variety').value}\r\n  サイズ：${item.querySelector('.item-size').value}\r\n  箱数：${item.querySelector('.item-quantity').value}個\r\n`;
+            body += ` ［品物${i + 1}］\r\n  品種：${item.querySelector('.item-variety').value}\r\n  サイズ：${item.querySelector('.item-size').value}\r\n  箱数：${item.querySelector('.item-quantity').value}箱\r\n`;
         });
 
         const v = sel => block.querySelector(sel).value;
@@ -202,9 +214,9 @@ document.getElementById('deliveryForm').addEventListener('submit', e => {
         }
 
         if (isSame) {
-            body += ` 1件目とご依頼主が同じ場合\r\n 郵便番号：${firstSender.z}\r\n 住所：${firstSender.a}\r\n お名前：${firstSender.n}\r\n ご連絡先：${firstSender.t}\r\n\r\n`;
+            body += ` 郵便番号：${firstSender.z}\r\n 住所：${firstSender.a}\r\n お名前：${firstSender.n}\r\n ご連絡先：${firstSender.t}\r\n\r\n`;
         } else if (isHome) {
-            body += ` ご自宅への配送の場合\r\n 郵便番号：${toZip}\r\n 住所：${toAddr}\r\n お名前：${toName}\r\n ご連絡先：${toTel}\r\n\r\n`;
+            body += ` ご本人\r\n\r\n`;
         } else {
             body += ` 郵便番号：${v('.from-zip')}\r\n 住所：${v('.from-addr')}\r\n お名前：${v('.from-name')}\r\n ご連絡先：${v('.from-tel')}\r\n\r\n`;
         }
