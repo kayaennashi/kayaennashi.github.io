@@ -28,6 +28,7 @@
         .add-item-btn:hover { background-color: #f0fbf9; }
         .shipping-notice { font-size: 0.85rem; color: #e74c3c; text-align: center; margin-bottom: 20px; }
         .info-message { display: none; color: #e74c3c; margin-top: 15px; font-weight: bold; text-align: center; font-size: 0.9rem; line-height: 1.4; }
+        .item-desc { font-size: 0.85rem; color: #d35400; margin-top: 5px; font-weight: bold; min-height: 1.2em; }
     </style>
 </head>
 <body>
@@ -55,7 +56,11 @@
         <button type="button" class="remove-item-btn">削除</button>
         <div class="form-group"><label>種類</label><select class="item-category" required><option value="" disabled selected>選択してください</option></select></div>
         <div class="form-group"><label>品種</label><select class="item-variety" required><option value="" disabled selected>種類を先に選択してください</option></select></div>
-        <div class="form-group"><label>箱サイズ</label><select class="item-size" required><option value="" disabled selected>品種を先に選択してください</option></select></div>
+        <div class="form-group">
+            <label>箱サイズ</label>
+            <select class="item-size" required><option value="" disabled selected>品種を先に選択してください</option></select>
+            <div class="item-desc"></div>
+        </div>
         <div class="form-group"><label>箱数</label><input type="number" class="item-quantity" min="1" value="1" required></div>
     </div>
 </template>
@@ -95,9 +100,12 @@
 // ==========================================
 const categoryData = { "梨": ["幸水", "豊水", "あきづき", "稲城", "新高"], "ぶどう": ["高尾ぶどう", "シャインマスカット", "富士の輝"] };
 const itemData = { 
-    "幸水": ["平箱", "二段箱"], "豊水": ["平箱", "二段箱"], "あきづき": ["平箱", "二段箱"], "稲城": ["平箱", "二段箱", "3kg箱（5玉）", "特4kg箱（6玉）"],
-    "新高": ["平箱", "二段箱", "3kg箱（4玉）", "特4kg箱（5玉）"], "高尾ぶどう": ["2kg箱", "3kg箱"], "シャインマスカット": ["1kg箱", "2kg箱"], "富士の輝": ["1kg箱", "2kg箱"]
+    "幸水": ["平箱", "二段箱"], "豊水": ["平箱", "二段箱"], "あきづき": ["平箱", "二段箱"], "稲城": ["平箱", "二段箱", "3kg箱", "特4kg箱"],
+    "新高": ["平箱", "二段箱", "3kg箱", "特4kg箱"], "高尾ぶどう": ["2kg箱", "3kg箱"], "シャインマスカット": ["1kg箱", "2kg箱"], "富士の輝": ["1kg箱", "2kg箱"]
 };
+const itemDescData = {
+    "幸水:平箱": "11玉","幸水:二段箱": "22玉","稲城:平箱": "9玉","稲城:二段箱": "18玉","稲城:3kg箱: "中玉5玉","稲城:特4kg箱": "大玉6玉","新高:平箱": "8玉","新高:3kg箱: "中玉4玉","新高:特4kg箱: "大玉5玉"
+};    
 // 受付停止の設定（カテゴリー、品種、品種:箱サイズ が指定可能）
 const stoppedItems = ["梨"];
 
@@ -149,17 +157,32 @@ ordersContainer.addEventListener('change', e => {
     // 種類が変わった時 -> 品種の選択肢を生成
     if (t.classList.contains('item-category')) {
         const varSel = itemBlock.querySelector('.item-variety'), sizeSel = itemBlock.querySelector('.item-size');
+        const descDiv = itemBlock.querySelector('.item-desc'); // 追加
         varSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
         sizeSel.innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
+        if (descDiv) descDiv.textContent = ''; // 追加（表示クリア）
         (categoryData[t.value] || []).forEach(v => varSel.insertAdjacentHTML('beforeend', createOption(v, stoppedItems.includes(v))));
     }
     // 品種が変わった時 -> 箱サイズの選択肢を生成
     else if (t.classList.contains('item-variety')) {
         const sizeSel = itemBlock.querySelector('.item-size');
+        const descDiv = itemBlock.querySelector('.item-desc'); // 追加
         sizeSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
+        if (descDiv) descDiv.textContent = ''; // 追加（表示クリア）
         (itemData[t.value] || []).forEach(s => sizeSel.insertAdjacentHTML('beforeend', createOption(s, stoppedItems.includes(`${t.value}:${s}`))));
     }
-    // ご自宅配送チェック
+    // ▼ ここから新しく追加（箱サイズが変わった時 -> 説明文を表示） ▼
+    else if (t.classList.contains('item-size')) {
+        const varSel = itemBlock.querySelector('.item-variety');
+        const descDiv = itemBlock.querySelector('.item-desc');
+        if (varSel && descDiv) {
+            const key = `${varSel.value}:${t.value}`; // 例: "幸水:平箱"
+            descDiv.textContent = itemDescData[key] ? `※目安：${itemDescData[key]}` : '';
+        }
+    }
+    // ▲ ここまで追加 ▲
+    
+    // ご自宅配送チェック（以下は既存コードのまま）
     else if (t.classList.contains('home-delivery-check')) {
         const senderInp = block.querySelector('.sender-inputs');
         senderInp.style.display = t.checked ? 'none' : 'block';
