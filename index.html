@@ -24,9 +24,11 @@
         .submit-btn:hover { background-color: #16a085; }
         .item-block { border: 1px dashed #1abc9c; padding: 15px; margin-bottom: 15px; border-radius: 4px; position: relative; background-color: #fafdfc; }
         .remove-item-btn { position: absolute; top: 15px; right: 15px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 5px 10px; font-size: 0.8rem; }
-        .add-item-btn { width: 100%; padding: 10px; background-color: #fff; color: #1abc9c; border: 2px dashed #1abc9c; border-radius: 4px; font-size: 0.95rem; cursor: pointer; margin-bottom: 20px; }
+        .add-item-btn { width: 100%; padding: 10px; background-color: #fff; color: #1abc9c; border: 2px dashed #1abc9c; border-radius: 4px; font-size: 0.95rem; cursor: pointer; margin-bottom: 5px; }
         .add-item-btn:hover { background-color: #f0fbf9; }
+        .shipping-notice { font-size: 0.85rem; color: #e74c3c; text-align: center; margin-bottom: 20px; }
         .info-message { display: none; color: #e74c3c; margin-top: 15px; font-weight: bold; text-align: center; font-size: 0.9rem; line-height: 1.4; }
+        .item-desc { font-size: 0.85rem; color: #d35400; margin-top: 5px; font-weight: bold; min-height: 1.2em; }
     </style>
 </head>
 <body>
@@ -48,23 +50,32 @@
     </form>
 </div>
 
+<!-- 品物テンプレート -->
 <template id="item-template">
     <div class="item-block">
         <button type="button" class="remove-item-btn">削除</button>
         <div class="form-group"><label>種類</label><select class="item-category" required><option value="" disabled selected>選択してください</option></select></div>
         <div class="form-group"><label>品種</label><select class="item-variety" required><option value="" disabled selected>種類を先に選択してください</option></select></div>
-        <div class="form-group"><label>サイズ</label><select class="item-size" required><option value="" disabled selected>品種を先に選択してください</option></select></div>
+        <div class="form-group">
+            <label>箱サイズ</label>
+            <select class="item-size" required><option value="" disabled selected>品種を先に選択してください</option></select>
+            <div class="item-desc"></div>
+        </div>
         <div class="form-group"><label>箱数</label><input type="number" class="item-quantity" min="1" value="1" required></div>
     </div>
 </template>
 
+<!-- 注文枠テンプレート -->
 <template id="order-template">
     <div class="order-block">
         <div class="order-title"></div>
         <div class="same-sender-area" style="display:none;"><label><input type="checkbox" class="same-sender-check">【1件目とご依頼主が同じ場合】</label></div>
         <div class="section-title">▼ 注文の品</div>
         <div class="items-container"></div>
-        <button type="button" class="add-item-btn">＋ 別の品種・サイズを追加する</button>
+        
+        <button type="button" class="add-item-btn">＋ 別の品種・箱サイズを追加する</button>
+        <div class="shipping-notice">※別の品種・箱サイズを追加する場合、送料が別に掛かる場合がございます。</div>
+        
         <div class="section-title">▼ 送り先</div>
         <div class="form-group"><label>郵便番号</label><input type="text" class="to-zip" placeholder="例：123-4567" required></div>
         <div class="form-group"><label>住所</label><input type="text" class="to-addr" placeholder="例：大阪府大阪市北区梅田1-2-3" required></div>
@@ -84,128 +95,147 @@
 </template>
 
 <script>
-const categoryData = {
-    "梨": ["幸水", "豊水", "あきづき", "稲城", "新高"],
-    "ぶどう": ["高尾", "シャインマスカット", "富士の輝"]
-};
-
-const itemData = {
+// ==========================================
+// マスターデータ
+// ==========================================
+const categoryData = { "梨": ["幸水", "豊水", "あきづき", "稲城", "新高"], "ぶどう": ["高尾ぶどう", "シャインマスカット", "富士の輝"] };
+const itemData = { 
     "幸水": ["平箱", "二段箱"], "豊水": ["平箱", "二段箱"], "あきづき": ["平箱", "二段箱"], "稲城": ["平箱", "二段箱", "3kg箱（5玉）", "特4kg箱（6玉）"],
-    "新高": ["平箱", "二段箱", "3kg箱（4玉）", "特4kg箱（5玉）"], "高尾": ["2kg箱", "3kg箱"], "シャインマスカット": ["1kg箱", "2kg箱"], "富士の輝": ["1kg箱", "2kg箱"]
+    "新高": ["平箱", "二段箱", "3kg箱（4玉）", "特4kg箱（5玉）"], "高尾ぶどう": ["2kg箱", "3kg箱"], "シャインマスカット": ["1kg箱", "2kg箱"], "富士の輝": ["1kg箱", "2kg箱"]
 };
 
-// ==========================================
-// 【受付停止の設定】
-// 1. 品種全体を止める場合：「"品種名","品種名2"」
-// 2. 特定サイズのみ止める場合：「"品種名:サイズ名"」
-// すべて再開の場合： stoppedItems = [];    
-// ==========================================
-const stoppedItems = [
-    "幸水", "豊水", "あきづき", "稲城", "新高"
-];
+// ▼ 商品説明データ（必要に応じてここに追加・変更してください）
+const itemDescData = {
+   "幸水:平箱": "11玉","幸水:二段箱": "22玉","稲城:平箱": "9玉","稲城:二段箱": "18玉","稲城:3kg箱: "中玉5玉","稲城:特4kg箱": "大玉6玉","新高:平箱": "8玉","新高:3kg箱: "中玉4玉","新高:特4kg箱: "大玉5玉",
+    "高尾ぶどう:2kg箱":"4~5房"
+};
 
-document.addEventListener('DOMContentLoaded', () => {
-    addOrderBlock();
-    document.getElementById('addOrderBtn').addEventListener('click', addOrderBlock);
+// 受付停止の設定（カテゴリー、品種、品種:箱サイズ が指定可能）
+const stoppedItems = ["梨"];
+
+// ==========================================
+// 共通関数・DOM要素
+// ==========================================
+// 停止判定付きの<option>を生成する短縮関数
+const createOption = (val, isStopped) => `<option value="${val}" ${isStopped ? 'disabled' : ''}>${val}${isStopped ? '（受付停止中）' : ''}</option>`;
+
+const itemTemplate = document.getElementById('item-template');
+const orderTemplate = document.getElementById('order-template');
+const ordersContainer = document.getElementById('orders-container');
+
+// 初期化：テンプレート内の「種類」セレクトボックスを1回だけ生成しておく
+const catSelTemplate = itemTemplate.content.querySelector('.item-category');
+Object.keys(categoryData).forEach(c => {
+    catSelTemplate.insertAdjacentHTML('beforeend', createOption(c, stoppedItems.includes(c)));
 });
+
+// お届け先ブロックを追加する関数
+function addOrderBlock() {
+    const clone = orderTemplate.content.cloneNode(true);
+    const orderCount = ordersContainer.children.length + 1;
     
-function createItemBlock() {
-    const clone = document.getElementById('item-template').content.cloneNode(true);
-    const catSel = clone.querySelector('.item-category'), varSel = clone.querySelector('.item-variety'), sizeSel = clone.querySelector('.item-size');
+    clone.querySelector('.order-title').textContent = `【${orderCount}件目】`;
+    if (orderCount > 1) clone.querySelector('.same-sender-area').style.display = 'block';
     
-    Object.keys(categoryData).forEach(c => catSel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
+    const itemsCont = clone.querySelector('.items-container');
+    itemsCont.appendChild(itemTemplate.content.cloneNode(true)); // すでに選択肢が入ったテンプレートを複製
+    itemsCont.querySelector('.remove-item-btn').style.display = 'none'; // 最初の1つは削除ボタン非表示
     
-    catSel.addEventListener('change', function() {
+    ordersContainer.appendChild(clone);
+}
+
+// 最初の起動時処理
+addOrderBlock();
+document.getElementById('addOrderBtn').addEventListener('click', addOrderBlock);
+
+// ==========================================
+// イベントを一括管理 (イベントデリゲーション)
+// ==========================================
+
+// 【Changeイベントの監視】（セレクトボックスやチェックボックスの変更）
+ordersContainer.addEventListener('change', e => {
+    const t = e.target;
+    const block = t.closest('.order-block');
+    const itemBlock = t.closest('.item-block');
+    
+    // 種類が変わった時 -> 品種の選択肢を生成
+    if (t.classList.contains('item-category')) {
+        const varSel = itemBlock.querySelector('.item-variety'), sizeSel = itemBlock.querySelector('.item-size');
+        const descDiv = itemBlock.querySelector('.item-desc');
         varSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
         sizeSel.innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
-        
-        categoryData[this.value]?.forEach(v => {
-            // 品種そのものが停止対象か判定
-            const isVarietyStopped = stoppedItems.includes(v);
-            const label = isVarietyStopped ? `${v}（受付停止中）` : v;
-            const disabledAttr = isVarietyStopped ? 'disabled' : '';
-            
-varSel.insertAdjacentHTML('beforeend', `<option value="${v}" ${disabledAttr}>${label}</option>`);
-        });
-    });
-
-    varSel.addEventListener('change', function() {
-        sizeSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
-        const selectedVariety = this.value;
-
-        itemData[selectedVariety]?.forEach(s => {
-            // 「品種名:サイズ名」の組み合わせが停止対象か判定
-            const isSizeStopped = stoppedItems.includes(`${selectedVariety}:${s}`);
-            const label = isSizeStopped ? `${s}（受付停止中）` : s;
-            const disabledAttr = isSizeStopped ? 'disabled' : '';
-
-            sizeSel.insertAdjacentHTML('beforeend', `<option value="${s}" ${disabledAttr}>${label}</option>`);
-        });
-    });
-    return clone;
-}
-
-function addOrderBlock() {
-    const container = document.getElementById('orders-container');
-    const clone = document.getElementById('order-template').content.cloneNode(true);
-    const orderCount = container.children.length + 1;
-
-    clone.querySelector('.order-title').textContent = `【${orderCount}件目】`;
-
-    const senderSec = clone.querySelector('.sender-section');
-    const senderInp = clone.querySelector('.sender-inputs');
-    const homeChk = clone.querySelector('.home-delivery-check');
-
-    homeChk.addEventListener('change', function() {
-        senderInp.style.display = this.checked ? 'none' : 'block';
-        senderInp.querySelectorAll('input').forEach(i => i.required = !this.checked);
-    });
-
-    if (orderCount > 1) {
-        clone.querySelector('.same-sender-area').style.display = 'block';
-        clone.querySelector('.same-sender-check').addEventListener('change', function() {
-            senderSec.style.display = this.checked ? 'none' : 'block';
-            senderSec.querySelectorAll('input[type="text"], input[type="tel"]').forEach(i => i.required = (!this.checked && !homeChk.checked));
-        });
+        if (descDiv) descDiv.textContent = ''; // 説明文をクリア
+        (categoryData[t.value] || []).forEach(v => varSel.insertAdjacentHTML('beforeend', createOption(v, stoppedItems.includes(v))));
     }
-
-    const itemsCont = clone.querySelector('.items-container');
-    itemsCont.appendChild(createItemBlock());
-    itemsCont.querySelector('.remove-item-btn').style.display = 'none';
-
-    clone.querySelector('.add-item-btn').addEventListener('click', () => {
-        itemsCont.appendChild(createItemBlock());
-        itemsCont.querySelectorAll('.remove-item-btn').forEach(btn => btn.style.display = 'block');
-    });
-
-    itemsCont.addEventListener('click', e => {
-        if (e.target.classList.contains('remove-item-btn')) {
-            e.target.closest('.item-block').remove();
-            if (itemsCont.children.length === 1) itemsCont.querySelector('.remove-item-btn').style.display = 'none';
+    // 品種が変わった時 -> 箱サイズの選択肢を生成
+    else if (t.classList.contains('item-variety')) {
+        const sizeSel = itemBlock.querySelector('.item-size');
+        const descDiv = itemBlock.querySelector('.item-desc');
+        sizeSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
+        if (descDiv) descDiv.textContent = ''; // 説明文をクリア
+        (itemData[t.value] || []).forEach(s => sizeSel.insertAdjacentHTML('beforeend', createOption(s, stoppedItems.includes(`${t.value}:${s}`))));
+    }
+    // 箱サイズが変わった時 -> 説明文を表示
+    else if (t.classList.contains('item-size')) {
+        const varSel = itemBlock.querySelector('.item-variety');
+        const descDiv = itemBlock.querySelector('.item-desc');
+        if (varSel && descDiv) {
+            const key = `${varSel.value}:${t.value}`; // 例: "幸水:平箱"
+            descDiv.textContent = itemDescData[key] ? `※目安：${itemDescData[key]}` : '';
         }
-    });
+    }
+    // ご自宅配送チェック
+    else if (t.classList.contains('home-delivery-check')) {
+        const senderInp = block.querySelector('.sender-inputs');
+        senderInp.style.display = t.checked ? 'none' : 'block';
+        senderInp.querySelectorAll('input').forEach(i => i.required = !t.checked);
+    }
+    // 1件目と同じチェック
+    else if (t.classList.contains('same-sender-check')) {
+        const senderSec = block.querySelector('.sender-section');
+        const homeChk = block.querySelector('.home-delivery-check');
+        senderSec.style.display = t.checked ? 'none' : 'block';
+        senderSec.querySelectorAll('input[type="text"], input[type="tel"]').forEach(i => i.required = (!t.checked && !homeChk.checked));
+    }
+});
 
-    container.appendChild(clone);
-}
+// 【Clickイベントの監視】（品物の追加・削除ボタン）
+ordersContainer.addEventListener('click', e => {
+    const t = e.target;
+    // 追加ボタン
+    if (t.classList.contains('add-item-btn')) {
+        const itemsCont = t.closest('.order-block').querySelector('.items-container');
+        itemsCont.appendChild(itemTemplate.content.cloneNode(true));
+        itemsCont.querySelectorAll('.remove-item-btn').forEach(btn => btn.style.display = 'block');
+    }
+    // 削除ボタン
+    else if (t.classList.contains('remove-item-btn')) {
+        const itemsCont = t.closest('.items-container');
+        t.closest('.item-block').remove();
+        if (itemsCont.children.length === 1) itemsCont.querySelector('.remove-item-btn').style.display = 'none';
+    }
+});
 
+// ==========================================
+// メーラー起動処理
+// ==========================================
 document.getElementById('deliveryForm').addEventListener('submit', e => {
     e.preventDefault();
-    let body = "";
+    const mailBody = [];
     let firstSender = {};
 
     document.querySelectorAll('.order-block').forEach((block, index) => {
         const num = index + 1;
-        body += `【${num}件目】\r\n▼ 注文の品\r\n`;
-
-        block.querySelectorAll('.item-block').forEach((item, i) => {
-            body += ` ［品物${i + 1}］\r\n  品種：${item.querySelector('.item-variety').value}\r\n  サイズ：${item.querySelector('.item-size').value}\r\n  箱数：${item.querySelector('.item-quantity').value}箱\r\n`;
-        });
-
         const v = sel => block.querySelector(sel).value;
         const toZip = v('.to-zip'), toAddr = v('.to-addr'), toName = v('.to-name'), toTel = v('.to-tel');
+        
+        // 品物リストのテキスト化
+        const itemsText = Array.from(block.querySelectorAll('.item-block')).map((item, i) => 
+            ` ［品物${i + 1}］\r\n  品種：${item.querySelector('.item-variety').value}\r\n  箱サイズ：${item.querySelector('.item-size').value}\r\n  箱数：${item.querySelector('.item-quantity').value}箱`
+        ).join('\r\n');
 
-        body += `\r\n▼ 送り先\r\n 郵便番号：${toZip}\r\n 住所：${toAddr}\r\n お名前：${toName}\r\n ご連絡先：${toTel}\r\n\r\n▼ ご依頼主\r\n`;
-
+        // ご依頼主リストのテキスト化
+        let senderText = "";
         const isSame = block.querySelector('.same-sender-check')?.checked;
         const isHome = block.querySelector('.home-delivery-check').checked;
 
@@ -214,20 +244,21 @@ document.getElementById('deliveryForm').addEventListener('submit', e => {
         }
 
         if (isSame) {
-            body += ` 郵便番号：${firstSender.z}\r\n 住所：${firstSender.a}\r\n お名前：${firstSender.n}\r\n ご連絡先：${firstSender.t}\r\n\r\n`;
+            senderText = ` 郵便番号：${firstSender.z}\r\n 住所：${firstSender.a}\r\n お名前：${firstSender.n}\r\n ご連絡先：${firstSender.t}`;
         } else if (isHome) {
-            body += ` ご本人\r\n\r\n`;
+            senderText = ` ご本人`;
         } else {
-            body += ` 郵便番号：${v('.from-zip')}\r\n 住所：${v('.from-addr')}\r\n お名前：${v('.from-name')}\r\n ご連絡先：${v('.from-tel')}\r\n\r\n`;
+            senderText = ` 郵便番号：${v('.from-zip')}\r\n 住所：${v('.from-addr')}\r\n お名前：${v('.from-name')}\r\n ご連絡先：${v('.from-tel')}`;
         }
-        body += "--------------------------------------\r\n\r\n";
+
+        // メール本文の配列に追加
+        mailBody.push(`【${num}件目】\r\n▼ 注文の品\r\n${itemsText}\r\n\r\n▼ 送り先\r\n 郵便番号：${toZip}\r\n 住所：${toAddr}\r\n お名前：${toName}\r\n ご連絡先：${toTel}\r\n\r\n▼ ご依頼主\r\n${senderText}\r\n\r\n--------------------------------------`);
     });
 
     const notes = document.getElementById('formNotes').value;
-    if (notes) body += `▼ その他ご要望など\r\n${notes}\r\n\r\n--------------------------------------\r\n\r\n`;
+    if (notes) mailBody.push(`▼ その他ご要望など\r\n${notes}\r\n\r\n--------------------------------------`);
 
-    window.location.href = `mailto:kayaen.nashi@gmail.com?subject=${encodeURIComponent("配送のご注文")}&body=${encodeURIComponent(body)}`;
-
+    window.location.href = `mailto:kayaen.nashi@gmail.com?subject=${encodeURIComponent("配送のご注文")}&body=${encodeURIComponent(mailBody.join('\r\n\r\n'))}`;
     document.getElementById('statusMessage').style.display = 'block';
 });
 </script>
