@@ -5,173 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>加弥園-kayaen- 配送依頼フォーム</title>
     <style>
-        /* ==========================================
-           1. 全体の設定
-           ========================================== */
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        .form-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        h2 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #1abc9c;
-            padding-bottom: 10px;
-        }
-
-        /* ==========================================
-           2. ブロックとタイトル
-           ========================================== */
-        .order-block {
-            background: #fdfdfd;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 20px;
-            position: relative;
-        }
-        .order-title {
-            margin-top: 0;
-            color: #2c3e50;
-            font-size: 1.2rem;
-            font-weight: bold;
-            padding-right: 80px;
-        }
-        .section-title {
-            color: #1abc9c;
-            border-left: 4px solid #1abc9c;
-            padding-left: 10px;
-            margin-top: 20px;
-            margin-bottom: 15px;
-            font-size: 1.05rem;
-            font-weight: bold;
-        }
-
-        /* ==========================================
-           3. フォーム部品
-           ========================================== */
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .form-container { max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 30px; border-bottom: 2px solid #1abc9c; padding-bottom: 10px; }
+        .order-block { background: #fdfdfd; border: 2px solid #e0e0e0; border-radius: 6px; padding: 20px; margin-bottom: 20px; position: relative; }
+        .order-title { margin-top: 0; color: #2c3e50; font-size: 1.2rem; font-weight: bold; padding-right: 80px; }
+        .section-title { color: #1abc9c; border-left: 4px solid #1abc9c; padding-left: 10px; margin-top: 20px; margin-bottom: 15px; font-size: 1.05rem; font-weight: bold; }
         .form-group { margin-bottom: 15px; }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-        input[type="text"], input[type="tel"], input[type="number"], select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 1rem;
-        }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+        input[type="text"], input[type="tel"], input[type="number"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
         textarea { resize: vertical; }
-        input:focus:not([readonly]), select:focus, textarea:focus {
-            border-color: #1abc9c;
-            outline: none;
-            background-color: #f9fdfc;
-        }
-
-        /* 自動入力・読み取り専用のスタイル */
-        input[readonly] {
-            background-color: #e9ecef;
-            color: #6c757d;
-            cursor: not-allowed;
-            border: 1px solid #ddd;
-        }
-        input[readonly]:focus {
-            outline: none;
-        }
-
-        /* チェックボックスエリア */
-        .same-sender-area, .home-delivery-area {
-            background-color: #e8f8f5;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-        }
-        .same-sender-area label, .home-delivery-area label {
-            display: inline-block;
-            margin: 0;
-            cursor: pointer;
-            color: #16a085;
-        }
-
-        /* ==========================================
-           4. ボタン類
-           ========================================== */
-        .add-btn {
-            display: block; width: 100%; padding: 12px;
-            background-color: #fff; color: #1abc9c;
-            border: 2px solid #1abc9c; border-radius: 4px;
-            font-size: 1rem; font-weight: bold; cursor: pointer;
-            margin-bottom: 20px; transition: background 0.2s;
-        }
+        input:focus:not([readonly]), select:focus, textarea:focus { border-color: #1abc9c; outline: none; background-color: #f9fdfc; }
+        input[readonly] { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; border: 1px solid #ddd; }
+        input[readonly]:focus { outline: none; }
+        .same-sender-area, .home-delivery-area { background-color: #e8f8f5; padding: 12px; border-radius: 4px; margin-bottom: 15px; }
+        .same-sender-area label, .home-delivery-area label { display: inline-block; margin: 0; cursor: pointer; color: #16a085; }
+        .add-btn { display: block; width: 100%; padding: 12px; background-color: #fff; color: #1abc9c; border: 2px solid #1abc9c; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; transition: background 0.2s; }
         .add-btn:hover { background-color: #f0fbf9; }
-
-        .submit-btn {
-            display: block; width: 100%; padding: 15px;
-            background-color: #1abc9c; color: white;
-            border: none; border-radius: 4px;
-            font-size: 1.1rem; font-weight: bold; cursor: pointer;
-            transition: background 0.2s;
-        }
+        .submit-btn { display: block; width: 100%; padding: 15px; background-color: #1abc9c; color: white; border: none; border-radius: 4px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
         .submit-btn:hover { background-color: #16a085; }
-
-        .add-item-btn {
-            width: 100%; padding: 10px; margin-bottom: 5px;
-            background-color: #fff; color: #1abc9c;
-            border: 2px dashed #1abc9c; border-radius: 4px;
-            font-size: 0.95rem; cursor: pointer;
-        }
+        .add-item-btn { width: 100%; padding: 10px; margin-bottom: 5px; background-color: #fff; color: #1abc9c; border: 2px dashed #1abc9c; border-radius: 4px; font-size: 0.95rem; cursor: pointer; }
         .add-item-btn:hover { background-color: #f0fbf9; }
-
-        .remove-order-btn, .remove-item-btn {
-            position: absolute; top: 15px; right: 15px;
-            color: white; border: none; border-radius: 4px; cursor: pointer;
-        }
-        .remove-order-btn {
-            background: #c0392b; padding: 6px 12px; font-size: 0.85rem;
-        }
+        .remove-order-btn, .remove-item-btn { position: absolute; top: 15px; right: 15px; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .remove-order-btn { background: #c0392b; padding: 6px 12px; font-size: 0.85rem; }
         .remove-order-btn:hover { background: #e74c3c; }
-        .remove-item-btn {
-            background: #e74c3c; padding: 5px 10px; font-size: 0.8rem;
-        }
-
-        /* ==========================================
-           5. 品物ブロック・テキスト
-           ========================================== */
-        .item-block {
-            border: 1px dashed #1abc9c;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-            position: relative;
-            background-color: #fafdfc;
-        }
-        .shipping-notice {
-            font-size: 0.85rem; color: #e74c3c; text-align: center; margin-bottom: 20px;
-        }
-        .info-message {
-            display: none; color: #e74c3c; margin-top: 15px;
-            font-weight: bold; text-align: center; font-size: 0.9rem; line-height: 1.4;
-        }
-        .item-desc {
-            font-size: 0.85rem; color: #d35400; margin-top: 5px;
-            font-weight: bold; min-height: 1.2em;
-        }
+        .remove-item-btn { background: #e74c3c; padding: 5px 10px; font-size: 0.8rem; }
+        .item-block { border: 1px dashed #1abc9c; padding: 15px; margin-bottom: 15px; border-radius: 4px; position: relative; background-color: #fafdfc; }
+        .shipping-notice { font-size: 0.85rem; color: #e74c3c; text-align: center; margin-bottom: 20px; }
+        .info-message { display: none; color: #e74c3c; margin-top: 15px; font-weight: bold; text-align: center; font-size: 0.9rem; line-height: 1.4; }
+        .item-desc { font-size: 0.85rem; color: #d35400; margin-top: 5px; font-weight: bold; min-height: 1.2em; }
     </style>
 </head>
 <body>
@@ -195,29 +57,21 @@
     </form>
 </div>
 
-<!-- ==========================================
-     テンプレート群
-     ========================================== -->
-
-<!-- 品物テンプレート -->
 <template id="item-template">
     <div class="item-block">
         <button type="button" class="remove-item-btn">削除</button>
-        
         <div class="form-group item-category-group">
             <label>種類</label>
             <select class="item-category" required>
                 <option value="" disabled selected>選択してください</option>
             </select>
         </div>
-        
         <div class="form-group item-variety-group" style="display: none;">
             <label>品種</label>
             <select class="item-variety" required>
                 <option value="" disabled selected>種類を先に選択してください</option>
             </select>
         </div>
-        
         <div class="form-group item-size-group" style="display: none;">
             <label>箱サイズ</label>
             <select class="item-size" required>
@@ -225,7 +79,6 @@
             </select>
             <div class="item-desc"></div>
         </div>
-        
         <div class="form-group item-quantity-group" style="display: none;">
             <label>箱数</label>
             <input type="number" class="item-quantity" min="1" value="1" required>
@@ -233,7 +86,6 @@
     </div>
 </template>
 
-<!-- 注文枠テンプレート -->
 <template id="order-template">
     <div class="order-block">
         <button type="button" class="remove-order-btn">このお届け先を削除</button>
@@ -245,7 +97,6 @@
         
         <div class="section-title">▼ 注文の品</div>
         <div class="items-container"></div>
-        
         <button type="button" class="add-item-btn">＋ 別の品種・箱サイズを追加する</button>
         <div class="shipping-notice">※別の品種・箱サイズを追加する場合、送料が別に掛かる場合がございます。</div>
         
@@ -303,9 +154,6 @@
 </template>
 
 <script>
-// ==========================================
-// マスターデータ
-// ==========================================
 const categoryData = { 
     "梨": ["幸水", "豊水", "あきづき", "稲城", "新高"], 
     "ぶどう": ["高尾ぶどう", "シャインマスカット", "富士の輝"] 
@@ -318,268 +166,185 @@ const itemData = {
 };
 
 const itemDescData = {
-    "幸水:平箱": "11玉", "幸水:二段箱": "22玉",
-    "あきづき:平箱": "11玉", "あきづき:二段箱": "22玉",
+    "幸水:平箱": "11玉", "幸水:二段箱": "22玉", "あきづき:平箱": "11玉", "あきづき:二段箱": "22玉",
     "稲城:平箱": "9玉", "稲城:二段箱": "18玉", "稲城:3kg箱": "中玉5玉", "稲城:特4kg箱": "大玉6玉",
     "豊水:平箱": "9玉", "豊水:二段箱": "18玉",
     "新高:平箱": "8玉", "新高:二段箱": "16玉", "新高:3kg箱": "中玉4玉", "新高:特4kg箱": "大玉5玉",
     "高尾ぶどう:2kg箱": "3, 4房（大きさによる）", "高尾ぶどう:3kg箱": "4, 5房（大きさによる）"
 };
 
-const stoppedItems = ["梨","高尾ぶどう"]; // 受付停止の設定
+const stoppedItems = ["梨", "高尾ぶどう"];
 
-// ==========================================
-// 初期化・UI制御関数
-// ==========================================
-const itemTemplate = document.getElementById('item-template');
-const orderTemplate = document.getElementById('order-template');
-const ordersContainer = document.getElementById('orders-container');
+const q = (el, sel) => el.querySelector(sel);
+const qa = (el, sel) => el.querySelectorAll(sel);
+const createOpt = (val, stopKey = val) => {
+    const isStop = stoppedItems.includes(stopKey);
+    return `<option value="${val}" ${isStop ? 'disabled' : ''}>${val}${isStop ? '（受付停止中）' : ''}</option>`;
+};
 
-const createOption = (val, isStopped) => 
-    `<option value="${val}" ${isStopped ? 'disabled' : ''}>${val}${isStopped ? '（受付停止中）' : ''}</option>`;
+const itemTpl = document.getElementById('item-template');
+const orderTpl = document.getElementById('order-template');
+const container = document.getElementById('orders-container');
 
-(function initCategoryOptions() {
-    const catSelTemplate = itemTemplate.content.querySelector('.item-category');
-    Object.keys(categoryData).forEach(c => {
-        catSelTemplate.insertAdjacentHTML('beforeend', createOption(c, stoppedItems.includes(c)));
+const catSel = q(itemTpl.content, '.item-category');
+Object.keys(categoryData).forEach(c => catSel.insertAdjacentHTML('beforeend', createOpt(c)));
+
+const updateOrders = () => {
+    qa(container, '.order-block').forEach((block, i) => {
+        const isFirst = i === 0;
+        q(block, '.order-title').textContent = `【${i + 1}件目】`;
+        
+        const sameArea = q(block, '.same-sender-area');
+        if (sameArea) sameArea.style.display = isFirst ? 'none' : 'block';
+        
+        const rmBtn = q(block, '.remove-order-btn');
+        if (rmBtn) rmBtn.style.display = isFirst ? 'none' : 'block';
     });
-})();
+};
 
-function updateOrderNumbers() {
-    const blocks = ordersContainer.querySelectorAll('.order-block');
-    blocks.forEach((block, index) => {
-        const isFirst = (index === 0);
-        block.querySelector('.order-title').textContent = `【${index + 1}件目】`;
-        
-        const sameSenderArea = block.querySelector('.same-sender-area');
-        if (sameSenderArea) sameSenderArea.style.display = isFirst ? 'none' : 'block';
-        
-        const removeBtn = block.querySelector('.remove-order-btn');
-        if (removeBtn) removeBtn.style.display = isFirst ? 'none' : 'block';
-    });
-}
-
-function addOrderBlock() {
-    const clone = orderTemplate.content.cloneNode(true);
-    const itemsCont = clone.querySelector('.items-container');
+const addOrder = () => {
+    const clone = orderTpl.content.cloneNode(true);
+    const items = q(clone, '.items-container');
+    items.appendChild(itemTpl.content.cloneNode(true));
+    q(items, '.remove-item-btn').style.display = 'none';
     
-    itemsCont.appendChild(itemTemplate.content.cloneNode(true));
-    itemsCont.querySelector('.remove-item-btn').style.display = 'none'; 
-    
-    ordersContainer.appendChild(clone);
-    updateOrderNumbers();
-}
+    container.appendChild(clone);
+    updateOrders();
+};
 
-addOrderBlock();
-document.getElementById('addOrderBtn').addEventListener('click', addOrderBlock);
+addOrder();
+document.getElementById('addOrderBtn').addEventListener('click', addOrder);
 
-// ==========================================
-// 郵便番号からの住所検索とハイフン除去
-// ==========================================
-async function searchAddress(zipCode, targetInput) {
-    if (zipCode.length !== 7) return;
-    
-    try {
-        const response = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${zipCode}`);
-        const data = await response.json();
-        
-        if (data.status === 200 && data.results) {
-            const result = data.results[0];
-            const address = `${result.address1}${result.address2}${result.address3}`;
-            targetInput.value = address;
-        }
-    } catch (error) {
-        console.error("住所の取得に失敗しました", error);
-    }
-}
-
-ordersContainer.addEventListener('input', e => {
+container.addEventListener('input', async e => {
     const t = e.target;
+    const c = t.classList;
     
-    // 郵便番号の場合
-    if (t.classList.contains('to-zip') || t.classList.contains('from-zip')) {
+    if (c.contains('to-zip') || c.contains('from-zip')) {
         t.value = t.value.replace(/-/g, '');
-        
         if (t.value.length === 7) {
-            const block = t.closest('.order-block');
-            const targetClass = t.classList.contains('to-zip') ? '.to-addr-auto' : '.from-addr-auto';
-            const targetInput = block.querySelector(targetClass);
-            searchAddress(t.value, targetInput);
+            try {
+                const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${t.value}`);
+                const data = await res.json();
+                if (data.status === 200 && data.results) {
+                    const r = data.results[0];
+                    const target = q(t.closest('.order-block'), c.contains('to-zip') ? '.to-addr-auto' : '.from-addr-auto');
+                    target.value = `${r.address1}${r.address2}${r.address3}`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
         }
     }
     
-    // 電話番号の場合
-    if (t.classList.contains('to-tel') || t.classList.contains('from-tel')) {
+    if (c.contains('to-tel') || c.contains('from-tel')) {
         t.value = t.value.replace(/-/g, '');
     }
 });
 
-function formatPhoneNumber(tel) {
-    const cleaned = tel.replace(/-/g, '');
-    if (cleaned.length === 11) {
-        return cleaned.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-    } else if (cleaned.length === 10) {
-        if (cleaned.startsWith('03') || cleaned.startsWith('06')) {
-            return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
-        }
-        return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-    }
+const fmtTel = (tel) => {
+    const v = tel.replace(/-/g, '');
+    if (v.length === 11) return v.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+    if (v.length === 10) return v.replace(v.match(/^(03|06)/) ? /(\d{2})(\d{4})(\d{4})/ : /(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
     return tel;
-}
+};
 
-// ==========================================
-// イベントデリゲーション (Change / Click)
-// ==========================================
-ordersContainer.addEventListener('change', e => {
+container.addEventListener('change', e => {
     const t = e.target;
+    const c = t.classList;
     const block = t.closest('.order-block');
-    const itemBlock = t.closest('.item-block');
+    const item = t.closest('.item-block');
     
-    // 【種類が変わった時】
-    if (t.classList.contains('item-category')) {
-        const varGrp = itemBlock.querySelector('.item-variety-group');
-        const sizeGrp = itemBlock.querySelector('.item-size-group');
-        const qtyGrp = itemBlock.querySelector('.item-quantity-group');
-        const varSel = itemBlock.querySelector('.item-variety');
-        const sizeSel = itemBlock.querySelector('.item-size');
-        const descDiv = itemBlock.querySelector('.item-desc');
-        
-        // 下位項目のリセットと非表示
+    if (c.contains('item-category')) {
+        const varSel = q(item, '.item-variety');
         varSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
-        sizeSel.innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
-        if (descDiv) descDiv.textContent = ''; 
-        sizeGrp.style.display = 'none';
-        qtyGrp.style.display = 'none';
+        (categoryData[t.value] || []).forEach(v => varSel.insertAdjacentHTML('beforeend', createOpt(v)));
         
-        // 品種の選択肢を生成して表示
-        (categoryData[t.value] || []).forEach(v => varSel.insertAdjacentHTML('beforeend', createOption(v, stoppedItems.includes(v))));
-        varGrp.style.display = 'block';
+        q(item, '.item-variety-group').style.display = 'block';
+        q(item, '.item-size-group').style.display = 'none';
+        q(item, '.item-quantity-group').style.display = 'none';
+        q(item, '.item-size').innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
+        q(item, '.item-desc').textContent = '';
     }
-    // 【品種が変わった時】
-    else if (t.classList.contains('item-variety')) {
-        const sizeGrp = itemBlock.querySelector('.item-size-group');
-        const qtyGrp = itemBlock.querySelector('.item-quantity-group');
-        const sizeSel = itemBlock.querySelector('.item-size');
-        const descDiv = itemBlock.querySelector('.item-desc');
-        
-        // 下位項目のリセットと非表示
+    else if (c.contains('item-variety')) {
+        const sizeSel = q(item, '.item-size');
         sizeSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
-        if (descDiv) descDiv.textContent = '';
-        qtyGrp.style.display = 'none';
+        (itemData[t.value] || []).forEach(s => sizeSel.insertAdjacentHTML('beforeend', createOpt(s, `${t.value}:${s}`)));
         
-        // 箱サイズの選択肢を生成して表示
-        (itemData[t.value] || []).forEach(s => sizeSel.insertAdjacentHTML('beforeend', createOption(s, stoppedItems.includes(`${t.value}:${s}`))));
-        sizeGrp.style.display = 'block';
+        q(item, '.item-size-group').style.display = 'block';
+        q(item, '.item-quantity-group').style.display = 'none';
+        q(item, '.item-desc').textContent = '';
     }
-    // 【箱サイズが変わった時】
-    else if (t.classList.contains('item-size')) {
-        const qtyGrp = itemBlock.querySelector('.item-quantity-group');
-        const varSel = itemBlock.querySelector('.item-variety');
-        const descDiv = itemBlock.querySelector('.item-desc');
-        
-        // 説明文の表示
-        if (varSel && descDiv) {
-            const key = `${varSel.value}:${t.value}`;
-            descDiv.textContent = itemDescData[key] ? `※目安：${itemDescData[key]}` : '';
-        }
-        
-        // 箱数の入力欄を表示
-        qtyGrp.style.display = 'block';
+    else if (c.contains('item-size')) {
+        const varVal = q(item, '.item-variety').value;
+        const desc = itemDescData[`${varVal}:${t.value}`];
+        q(item, '.item-desc').textContent = desc ? `※目安：${desc}` : '';
+        q(item, '.item-quantity-group').style.display = 'block';
     }
-    // 【ご自宅配送チェック】
-    else if (t.classList.contains('home-delivery-check')) {
-        const senderInp = block.querySelector('.sender-inputs');
-        senderInp.style.display = t.checked ? 'none' : 'block';
-        senderInp.querySelectorAll('input').forEach(i => i.required = !t.checked);
+    else if (c.contains('home-delivery-check')) {
+        const inputs = q(block, '.sender-inputs');
+        inputs.style.display = t.checked ? 'none' : 'block';
+        qa(inputs, 'input').forEach(i => i.required = !t.checked);
     }
-    // 【1件目と同じチェック】
-    else if (t.classList.contains('same-sender-check')) {
-        const senderSec = block.querySelector('.sender-section');
-        const homeChk = block.querySelector('.home-delivery-check');
-        senderSec.style.display = t.checked ? 'none' : 'block';
-        senderSec.querySelectorAll('input[type="text"], input[type="tel"]').forEach(i => i.required = (!t.checked && !homeChk.checked));
+    else if (c.contains('same-sender-check')) {
+        const sec = q(block, '.sender-section');
+        const homeChk = q(block, '.home-delivery-check').checked;
+        sec.style.display = t.checked ? 'none' : 'block';
+        qa(sec, 'input[type="text"], input[type="tel"]').forEach(i => i.required = (!t.checked && !homeChk));
     }
 });
 
-ordersContainer.addEventListener('click', e => {
+container.addEventListener('click', e => {
     const t = e.target;
+    const c = t.classList;
     
-    if (t.classList.contains('add-item-btn')) {
-        const itemsCont = t.closest('.order-block').querySelector('.items-container');
-        itemsCont.appendChild(itemTemplate.content.cloneNode(true));
-        itemsCont.querySelectorAll('.remove-item-btn').forEach(btn => btn.style.display = 'block');
+    if (c.contains('add-item-btn')) {
+        const items = q(t.closest('.order-block'), '.items-container');
+        items.appendChild(itemTpl.content.cloneNode(true));
+        qa(items, '.remove-item-btn').forEach(btn => btn.style.display = 'block');
     }
-    else if (t.classList.contains('remove-item-btn')) {
-        const itemsCont = t.closest('.items-container');
+    else if (c.contains('remove-item-btn')) {
+        const items = t.closest('.items-container');
         t.closest('.item-block').remove();
-        if (itemsCont.children.length === 1) itemsCont.querySelector('.remove-item-btn').style.display = 'none';
+        if (items.children.length === 1) q(items, '.remove-item-btn').style.display = 'none';
     }
-    else if (t.classList.contains('remove-order-btn')) {
+    else if (c.contains('remove-order-btn')) {
         t.closest('.order-block').remove();
-        updateOrderNumbers();
+        updateOrders();
     }
 });
-
-// ==========================================
-// メール本文作成・送信ロジック
-// ==========================================
-function generateMailText() {
-    const mailBody = [];
-    let firstSender = {};
-
-    document.querySelectorAll('.order-block').forEach((block, index) => {
-        const num = index + 1;
-        const v = sel => block.querySelector(sel).value;
-        const toZip = v('.to-zip');
-        const toAddrAuto = v('.to-addr-auto');
-        const toAddrDetail = v('.to-addr-detail');
-        const toAddr = `${toAddrAuto}${toAddrDetail}`;
-        const toName = v('.to-name');
-        
-        const toTel = formatPhoneNumber(v('.to-tel'));
-        
-        const itemsText = Array.from(block.querySelectorAll('.item-block')).map((item, i) => 
-            ` ［品物${i + 1}］\r\n  品種：${item.querySelector('.item-variety').value}\r\n  箱サイズ：${item.querySelector('.item-size').value}\r\n  箱数：${item.querySelector('.item-quantity').value}箱`
-        ).join('\r\n');
-
-        let senderText = "";
-        const isSame = block.querySelector('.same-sender-check')?.checked;
-        const isHome = block.querySelector('.home-delivery-check').checked;
-
-        if (num === 1) {
-            firstSender = isHome 
-                ? { z: toZip, a: toAddr, n: toName, t: toTel } 
-                : { z: v('.from-zip'), a: `${v('.from-addr-auto')}${v('.from-addr-detail')}`, n: v('.from-name'), t: formatPhoneNumber(v('.from-tel')) };
-        }
-
-        if (isSame) {
-            senderText = ` 郵便番号：${firstSender.z}\r\n 住所：${firstSender.a}\r\n お名前：${firstSender.n}\r\n ご連絡先：${firstSender.t}`;
-        } else if (isHome) {
-            senderText = ` ご本人`;
-        } else {
-            senderText = ` 郵便番号：${v('.from-zip')}\r\n 住所：${v('.from-addr-auto')}${v('.from-addr-detail')}\r\n お名前：${v('.from-name')}\r\n ご連絡先：${formatPhoneNumber(v('.from-tel'))}`;
-        }
-
-        mailBody.push(
-            `【${num}件目】\r\n▼ 注文の品\r\n${itemsText}\r\n\r\n▼ 送り先\r\n 郵便番号：${toZip}\r\n 住所：${toAddr}\r\n お名前：${toName}\r\n ご連絡先：${toTel}\r\n\r\n▼ ご依頼主\r\n${senderText}\r\n\r\n--------------------------------------`
-        );
-    });
-
-    const notes = document.getElementById('formNotes').value;
-    if (notes) {
-        mailBody.push(`▼ その他ご要望など\r\n${notes}\r\n\r\n--------------------------------------`);
-    }
-
-    return mailBody.join('\r\n\r\n');
-}
 
 document.getElementById('deliveryForm').addEventListener('submit', e => {
     e.preventDefault();
-    
-    const mailText = generateMailText();
-    
-    window.location.href = `mailto:kayaen.nashi@gmail.com?subject=${encodeURIComponent("配送のご注文")}&body=${encodeURIComponent(mailText)}`;
-    
+    const mailBody = [];
+    let fSender = {};
+
+    qa(document, '.order-block').forEach((block, i) => {
+        const v = sel => q(block, sel).value;
+        const toZip = v('.to-zip'), toAddr = `${v('.to-addr-auto')}${v('.to-addr-detail')}`, toName = v('.to-name'), toTel = fmtTel(v('.to-tel'));
+        
+        const itemsText = Array.from(qa(block, '.item-block')).map((item, j) => 
+            ` ［品物${j + 1}］\r\n  品種：${q(item, '.item-variety').value}\r\n  箱サイズ：${q(item, '.item-size').value}\r\n  箱数：${q(item, '.item-quantity').value}箱`
+        ).join('\r\n');
+
+        const isSame = q(block, '.same-sender-check')?.checked;
+        const isHome = q(block, '.home-delivery-check').checked;
+        
+        if (i === 0) {
+            fSender = isHome ? { z: toZip, a: toAddr, n: toName, t: toTel } 
+                             : { z: v('.from-zip'), a: `${v('.from-addr-auto')}${v('.from-addr-detail')}`, n: v('.from-name'), t: fmtTel(v('.from-tel')) };
+        }
+
+        let sText = isSame ? ` 郵便番号：${fSender.z}\r\n 住所：${fSender.a}\r\n お名前：${fSender.n}\r\n ご連絡先：${fSender.t}`
+                  : isHome ? ` ご本人`
+                  : ` 郵便番号：${v('.from-zip')}\r\n 住所：${v('.from-addr-auto')}${v('.from-addr-detail')}\r\n お名前：${v('.from-name')}\r\n ご連絡先：${fmtTel(v('.from-tel'))}`;
+
+        mailBody.push(`【${i + 1}件目】\r\n▼ 注文の品\r\n${itemsText}\r\n\r\n▼ 送り先\r\n 郵便番号：${toZip}\r\n 住所：${toAddr}\r\n お名前：${toName}\r\n ご連絡先：${toTel}\r\n\r\n▼ ご依頼主\r\n${sText}\r\n\r\n--------------------------------------`);
+    });
+
+    const notes = document.getElementById('formNotes').value;
+    if (notes) mailBody.push(`▼ その他ご要望など\r\n${notes}\r\n\r\n--------------------------------------`);
+
+    window.location.href = `mailto:kayaen.nashi@gmail.com?subject=${encodeURIComponent("配送のご注文")}&body=${encodeURIComponent(mailBody.join('\r\n\r\n'))}`;
     document.getElementById('statusMessage').style.display = 'block';
 });
 </script>
