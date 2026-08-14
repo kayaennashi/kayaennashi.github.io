@@ -78,10 +78,21 @@
             font-size: 1rem;
         }
         textarea { resize: vertical; }
-        input:focus, select:focus, textarea:focus {
+        input:focus:not([readonly]), select:focus, textarea:focus {
             border-color: #1abc9c;
             outline: none;
             background-color: #f9fdfc;
+        }
+
+        /* 自動入力・読み取り専用のスタイル */
+        input[readonly] {
+            background-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+            border: 1px solid #ddd;
+        }
+        input[readonly]:focus {
+            outline: none;
         }
 
         /* チェックボックスエリア */
@@ -192,26 +203,30 @@
 <template id="item-template">
     <div class="item-block">
         <button type="button" class="remove-item-btn">削除</button>
-        <div class="form-group">
+        
+        <div class="form-group item-category-group">
             <label>種類</label>
             <select class="item-category" required>
                 <option value="" disabled selected>選択してください</option>
             </select>
         </div>
-        <div class="form-group">
+        
+        <div class="form-group item-variety-group" style="display: none;">
             <label>品種</label>
             <select class="item-variety" required>
                 <option value="" disabled selected>種類を先に選択してください</option>
             </select>
         </div>
-        <div class="form-group">
+        
+        <div class="form-group item-size-group" style="display: none;">
             <label>箱サイズ</label>
             <select class="item-size" required>
                 <option value="" disabled selected>品種を先に選択してください</option>
             </select>
             <div class="item-desc"></div>
         </div>
-        <div class="form-group">
+        
+        <div class="form-group item-quantity-group" style="display: none;">
             <label>箱数</label>
             <input type="number" class="item-quantity" min="1" value="1" required>
         </div>
@@ -235,12 +250,26 @@
         <div class="shipping-notice">※別の品種・箱サイズを追加する場合、送料が別に掛かる場合がございます。</div>
         
         <div class="section-title">▼ 送り先</div>
-        <!-- ハイフンなしのプレースホルダーに変更 -->
-        <div class="form-group"><label>郵便番号（ハイフンなし）</label><input type="text" class="to-zip" placeholder="例：1234567" maxlength="8" required></div>
-        <div class="form-group"><label>住所</label><input type="text" class="to-addr" placeholder="例：大阪府大阪市北区梅田1-2-3" required></div>
-        <div class="form-group"><label>お名前</label><input type="text" class="to-name" placeholder="例：稲城 梨太郎" required></div>
-        <!-- ハイフンなしのプレースホルダーに変更 -->
-        <div class="form-group"><label>電話番号（ハイフンなし）</label><input type="tel" class="to-tel" placeholder="例：09000000000" required></div>
+        <div class="form-group">
+            <label>郵便番号（ハイフンなし）</label>
+            <input type="text" class="to-zip" placeholder="例：1234567" maxlength="8" required>
+        </div>
+        <div class="form-group">
+            <label>住所（自動入力）</label>
+            <input type="text" class="to-addr-auto" placeholder="郵便番号から自動入力されます" readonly tabindex="-1">
+        </div>
+        <div class="form-group">
+            <label>番地・建物名など</label>
+            <input type="text" class="to-addr-detail" placeholder="例：1-2-3 メゾン稲城101" required>
+        </div>
+        <div class="form-group">
+            <label>お名前</label>
+            <input type="text" class="to-name" placeholder="例：稲城 梨太郎" required>
+        </div>
+        <div class="form-group">
+            <label>電話番号（ハイフンなし）</label>
+            <input type="tel" class="to-tel" placeholder="例：09000000000" required>
+        </div>
         
         <div class="sender-section">
             <div class="section-title">▼ ご依頼主</div>
@@ -248,12 +277,26 @@
                 <label><input type="checkbox" class="home-delivery-check">【ご自宅への配送の場合】</label>
             </div>
             <div class="sender-inputs">
-                <!-- ハイフンなしのプレースホルダーに変更 -->
-                <div class="form-group"><label>郵便番号（ハイフンなし）</label><input type="text" class="from-zip" placeholder="例：9876543" maxlength="8" required></div>
-                <div class="form-group"><label>住所</label><input type="text" class="from-addr" placeholder="例：東京都稲城市東長沼2125-3" required></div>
-                <div class="form-group"><label>お名前</label><input type="text" class="from-name" placeholder="例：稲城梨之助" required></div>
-                <!-- ハイフンなしのプレースホルダーに変更 -->
-                <div class="form-group"><label>電話番号（ハイフンなし）</label><input type="tel" class="from-tel" placeholder="例：0600000000" required></div>
+                <div class="form-group">
+                    <label>郵便番号（ハイフンなし）</label>
+                    <input type="text" class="from-zip" placeholder="例：9876543" maxlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label>住所（自動入力）</label>
+                    <input type="text" class="from-addr-auto" placeholder="郵便番号から自動入力されます" readonly tabindex="-1">
+                </div>
+                <div class="form-group">
+                    <label>番地・建物名など</label>
+                    <input type="text" class="from-addr-detail" placeholder="例：2125-3" required>
+                </div>
+                <div class="form-group">
+                    <label>お名前</label>
+                    <input type="text" class="from-name" placeholder="例：稲城梨之助" required>
+                </div>
+                <div class="form-group">
+                    <label>電話番号（ハイフンなし）</label>
+                    <input type="tel" class="from-tel" placeholder="例：0600000000" required>
+                </div>
             </div>
         </div>
     </div>
@@ -292,11 +335,9 @@ const itemTemplate = document.getElementById('item-template');
 const orderTemplate = document.getElementById('order-template');
 const ordersContainer = document.getElementById('orders-container');
 
-// <option>タグ生成ヘルパー
 const createOption = (val, isStopped) => 
     `<option value="${val}" ${isStopped ? 'disabled' : ''}>${val}${isStopped ? '（受付停止中）' : ''}</option>`;
 
-// アプリ起動時に「種類」の選択肢をテンプレートに仕込んでおく
 (function initCategoryOptions() {
     const catSelTemplate = itemTemplate.content.querySelector('.item-category');
     Object.keys(categoryData).forEach(c => {
@@ -304,7 +345,6 @@ const createOption = (val, isStopped) =>
     });
 })();
 
-// お届け先の番号振り直し ＆ 1件目のUI制御
 function updateOrderNumbers() {
     const blocks = ordersContainer.querySelectorAll('.order-block');
     blocks.forEach((block, index) => {
@@ -319,7 +359,6 @@ function updateOrderNumbers() {
     });
 }
 
-// お届け先ブロックの追加
 function addOrderBlock() {
     const clone = orderTemplate.content.cloneNode(true);
     const itemsCont = clone.querySelector('.items-container');
@@ -331,15 +370,12 @@ function addOrderBlock() {
     updateOrderNumbers();
 }
 
-// 初期表示で1つ追加
 addOrderBlock();
 document.getElementById('addOrderBtn').addEventListener('click', addOrderBlock);
 
 // ==========================================
-// 追加機能：郵便番号からの住所検索とハイフン除去
+// 郵便番号からの住所検索とハイフン除去
 // ==========================================
-
-// zipcloud APIを利用した住所検索関数
 async function searchAddress(zipCode, targetInput) {
     if (zipCode.length !== 7) return;
     
@@ -357,17 +393,16 @@ async function searchAddress(zipCode, targetInput) {
     }
 }
 
-// 入力時のリアルタイム処理（ハイフン除去・住所検索）
 ordersContainer.addEventListener('input', e => {
     const t = e.target;
     
     // 郵便番号の場合
     if (t.classList.contains('to-zip') || t.classList.contains('from-zip')) {
-        t.value = t.value.replace(/-/g, ''); // ハイフンを除去
+        t.value = t.value.replace(/-/g, '');
         
         if (t.value.length === 7) {
             const block = t.closest('.order-block');
-            const targetClass = t.classList.contains('to-zip') ? '.to-addr' : '.from-addr';
+            const targetClass = t.classList.contains('to-zip') ? '.to-addr-auto' : '.from-addr-auto';
             const targetInput = block.querySelector(targetClass);
             searchAddress(t.value, targetInput);
         }
@@ -375,14 +410,12 @@ ordersContainer.addEventListener('input', e => {
     
     // 電話番号の場合
     if (t.classList.contains('to-tel') || t.classList.contains('from-tel')) {
-        t.value = t.value.replace(/-/g, ''); // ハイフンを除去
+        t.value = t.value.replace(/-/g, '');
     }
 });
 
-// 電話番号にハイフンを挿入する関数（メール本文用）
 function formatPhoneNumber(tel) {
     const cleaned = tel.replace(/-/g, '');
-    
     if (cleaned.length === 11) {
         return cleaned.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
     } else if (cleaned.length === 10) {
@@ -404,34 +437,54 @@ ordersContainer.addEventListener('change', e => {
     
     // 【種類が変わった時】
     if (t.classList.contains('item-category')) {
+        const varGrp = itemBlock.querySelector('.item-variety-group');
+        const sizeGrp = itemBlock.querySelector('.item-size-group');
+        const qtyGrp = itemBlock.querySelector('.item-quantity-group');
         const varSel = itemBlock.querySelector('.item-variety');
         const sizeSel = itemBlock.querySelector('.item-size');
         const descDiv = itemBlock.querySelector('.item-desc');
         
+        // 下位項目のリセットと非表示
         varSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
         sizeSel.innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
         if (descDiv) descDiv.textContent = ''; 
+        sizeGrp.style.display = 'none';
+        qtyGrp.style.display = 'none';
         
+        // 品種の選択肢を生成して表示
         (categoryData[t.value] || []).forEach(v => varSel.insertAdjacentHTML('beforeend', createOption(v, stoppedItems.includes(v))));
+        varGrp.style.display = 'block';
     }
     // 【品種が変わった時】
     else if (t.classList.contains('item-variety')) {
+        const sizeGrp = itemBlock.querySelector('.item-size-group');
+        const qtyGrp = itemBlock.querySelector('.item-quantity-group');
         const sizeSel = itemBlock.querySelector('.item-size');
         const descDiv = itemBlock.querySelector('.item-desc');
         
+        // 下位項目のリセットと非表示
         sizeSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
         if (descDiv) descDiv.textContent = '';
+        qtyGrp.style.display = 'none';
         
+        // 箱サイズの選択肢を生成して表示
         (itemData[t.value] || []).forEach(s => sizeSel.insertAdjacentHTML('beforeend', createOption(s, stoppedItems.includes(`${t.value}:${s}`))));
+        sizeGrp.style.display = 'block';
     }
     // 【箱サイズが変わった時】
     else if (t.classList.contains('item-size')) {
+        const qtyGrp = itemBlock.querySelector('.item-quantity-group');
         const varSel = itemBlock.querySelector('.item-variety');
         const descDiv = itemBlock.querySelector('.item-desc');
+        
+        // 説明文の表示
         if (varSel && descDiv) {
             const key = `${varSel.value}:${t.value}`;
             descDiv.textContent = itemDescData[key] ? `※目安：${itemDescData[key]}` : '';
         }
+        
+        // 箱数の入力欄を表示
+        qtyGrp.style.display = 'block';
     }
     // 【ご自宅配送チェック】
     else if (t.classList.contains('home-delivery-check')) {
@@ -451,19 +504,16 @@ ordersContainer.addEventListener('change', e => {
 ordersContainer.addEventListener('click', e => {
     const t = e.target;
     
-    // 品物の追加
     if (t.classList.contains('add-item-btn')) {
         const itemsCont = t.closest('.order-block').querySelector('.items-container');
         itemsCont.appendChild(itemTemplate.content.cloneNode(true));
         itemsCont.querySelectorAll('.remove-item-btn').forEach(btn => btn.style.display = 'block');
     }
-    // 品物の削除
     else if (t.classList.contains('remove-item-btn')) {
         const itemsCont = t.closest('.items-container');
         t.closest('.item-block').remove();
         if (itemsCont.children.length === 1) itemsCont.querySelector('.remove-item-btn').style.display = 'none';
     }
-    // お届け先の削除
     else if (t.classList.contains('remove-order-btn')) {
         t.closest('.order-block').remove();
         updateOrderNumbers();
@@ -473,7 +523,6 @@ ordersContainer.addEventListener('click', e => {
 // ==========================================
 // メール本文作成・送信ロジック
 // ==========================================
-
 function generateMailText() {
     const mailBody = [];
     let firstSender = {};
@@ -482,27 +531,25 @@ function generateMailText() {
         const num = index + 1;
         const v = sel => block.querySelector(sel).value;
         const toZip = v('.to-zip');
-        const toAddr = v('.to-addr');
+        const toAddrAuto = v('.to-addr-auto');
+        const toAddrDetail = v('.to-addr-detail');
+        const toAddr = `${toAddrAuto}${toAddrDetail}`;
         const toName = v('.to-name');
         
-        // メール用に電話番号をフォーマット
         const toTel = formatPhoneNumber(v('.to-tel'));
         
-        // 1. 品物リストのテキスト化
         const itemsText = Array.from(block.querySelectorAll('.item-block')).map((item, i) => 
             ` ［品物${i + 1}］\r\n  品種：${item.querySelector('.item-variety').value}\r\n  箱サイズ：${item.querySelector('.item-size').value}\r\n  箱数：${item.querySelector('.item-quantity').value}箱`
         ).join('\r\n');
 
-        // 2. ご依頼主情報の判定・テキスト化
         let senderText = "";
         const isSame = block.querySelector('.same-sender-check')?.checked;
         const isHome = block.querySelector('.home-delivery-check').checked;
 
-        // 1件目のデータを保持しておく
         if (num === 1) {
             firstSender = isHome 
                 ? { z: toZip, a: toAddr, n: toName, t: toTel } 
-                : { z: v('.from-zip'), a: v('.from-addr'), n: v('.from-name'), t: formatPhoneNumber(v('.from-tel')) };
+                : { z: v('.from-zip'), a: `${v('.from-addr-auto')}${v('.from-addr-detail')}`, n: v('.from-name'), t: formatPhoneNumber(v('.from-tel')) };
         }
 
         if (isSame) {
@@ -510,16 +557,14 @@ function generateMailText() {
         } else if (isHome) {
             senderText = ` ご本人`;
         } else {
-            senderText = ` 郵便番号：${v('.from-zip')}\r\n 住所：${v('.from-addr')}\r\n お名前：${v('.from-name')}\r\n ご連絡先：${formatPhoneNumber(v('.from-tel'))}`;
+            senderText = ` 郵便番号：${v('.from-zip')}\r\n 住所：${v('.from-addr-auto')}${v('.from-addr-detail')}\r\n お名前：${v('.from-name')}\r\n ご連絡先：${formatPhoneNumber(v('.from-tel'))}`;
         }
 
-        // 3. ブロック単位の本文追加
         mailBody.push(
             `【${num}件目】\r\n▼ 注文の品\r\n${itemsText}\r\n\r\n▼ 送り先\r\n 郵便番号：${toZip}\r\n 住所：${toAddr}\r\n お名前：${toName}\r\n ご連絡先：${toTel}\r\n\r\n▼ ご依頼主\r\n${senderText}\r\n\r\n--------------------------------------`
         );
     });
 
-    // 4. 備考欄の追加
     const notes = document.getElementById('formNotes').value;
     if (notes) {
         mailBody.push(`▼ その他ご要望など\r\n${notes}\r\n\r\n--------------------------------------`);
@@ -528,16 +573,13 @@ function generateMailText() {
     return mailBody.join('\r\n\r\n');
 }
 
-// 送信ボタン押下時の処理
 document.getElementById('deliveryForm').addEventListener('submit', e => {
     e.preventDefault();
     
     const mailText = generateMailText();
     
-    // メーラーを起動
     window.location.href = `mailto:kayaen.nashi@gmail.com?subject=${encodeURIComponent("配送のご注文")}&body=${encodeURIComponent(mailText)}`;
     
-    // メッセージを表示
     document.getElementById('statusMessage').style.display = 'block';
 });
 </script>
