@@ -168,7 +168,7 @@ const firebaseConfig = {
 };
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const analytics = getFirestore(app);
 const categoryData = { 
     "梨": ["幸水", "豊水", "あきづき", "稲城", "新高"], 
     "ぶどう": ["高尾ぶどう", "シャインマスカット", "富士の輝"] 
