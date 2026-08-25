@@ -154,21 +154,24 @@
 </template>
 
 <script type="module">
+// 1. Firebaseの機能を読み込む（必須）
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, runTransaction } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
+// 2. プロジェクトの設定
 const firebaseConfig = {
-  apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
-  authDomain: "kayaenform.firebaseapp.com",
-  projectId: "kayaenform",
-  storageBucket: "kayaenform.firebasestorage.app",
-  messagingSenderId: "608399975787",
-  appId: "1:608399975787:web:b8d2baf55121703a4a582e",
-  measurementId: "G-2Q0GD6J0LF"
+    apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
+    authDomain: "kayaenform.firebaseapp.com",
+    projectId: "kayaenform",
+    storageBucket: "kayaenform.firebasestorage.app",
+    messagingSenderId: "608399975787",
+    appId: "1:608399975787:web:b8d2baf55121703a4a582e"
 };
-// Initialize Firebase
+    
+// 3. アプリとデータベース(db)の初期化
 const app = initializeApp(firebaseConfig);
-const analytics = getFirestore(app);
+const db = getFirestore(app);
+
 const categoryData = { 
     "梨": ["幸水", "豊水", "あきづき", "稲城", "新高"], 
     "ぶどう": ["高尾ぶどう", "シャインマスカット", "富士の輝"] 
