@@ -158,16 +158,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/fireba
 import { getFirestore, collection, getDocs, doc, runTransaction } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
-    authDomain: "kayaenform.firebaseapp.com",
-    projectId: "kayaenform",
-    storageBucket: "kayaenform.firebasestorage.app",
-    messagingSenderId: "608399975787",
-    appId: "1:608399975787:web:b8d2baf55121703a4a582e"
+  apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
+  authDomain: "kayaenform.firebaseapp.com",
+  projectId: "kayaenform",
+  storageBucket: "kayaenform.firebasestorage.app",
+  messagingSenderId: "608399975787",
+  appId: "1:608399975787:web:b8d2baf55121703a4a582e",
+  measurementId: "G-2Q0GD6J0LF"
 };
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
+const analytics = getAnalytics(app);
 const categoryData = { 
     "梨": ["幸水", "豊水", "あきづき", "稲城", "新高"], 
     "ぶどう": ["高尾ぶどう", "シャインマスカット", "富士の輝"] 
