@@ -153,7 +153,21 @@
     </div>
 </template>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, runTransaction } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
+    authDomain: "kayaenform.firebaseapp.com",
+    projectId: "kayaenform",
+    storageBucket: "kayaenform.firebasestorage.app",
+    messagingSenderId: "608399975787",
+    appId: "1:608399975787:web:b8d2baf55121703a4a582e"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const categoryData = { 
     "梨": ["幸水", "豊水", "あきづき", "稲城", "新高"], 
     "ぶどう": ["高尾ぶどう", "シャインマスカット", "富士の輝"] 
@@ -173,12 +187,15 @@ const itemDescData = {
     "高尾ぶどう:2kg箱": "3, 4房（大きさによる）", "高尾ぶどう:3kg箱": "4, 5房（大きさによる）"
 };
 
-const stoppedItems = ["梨"];
+// Firestoreから取得する受付停止（品種:箱サイズ）のリスト
+let stoppedItems = [];
 
 const q = (el, sel) => el.querySelector(sel);
 const qa = (el, sel) => el.querySelectorAll(sel);
-const createOpt = (val, stopKey = val) => {
-    const isStop = stoppedItems.includes(stopKey);
+
+// 箱サイズ用オプション生成（「品種:箱サイズ」キーで判定）
+const createOpt = (val, fullKey = val) => {
+    const isStop = stoppedItems.includes(fullKey);
     return `<option value="${val}" ${isStop ? 'disabled' : ''}>${val}${isStop ? '（受付停止中）' : ''}</option>`;
 };
 
@@ -186,17 +203,32 @@ const itemTpl = document.getElementById('item-template');
 const orderTpl = document.getElementById('order-template');
 const container = document.getElementById('orders-container');
 
-const catSel = q(itemTpl.content, '.item-category');
-Object.keys(categoryData).forEach(c => catSel.insertAdjacentHTML('beforeend', createOpt(c)));
+// 初期設定：Firestoreから在庫データを取得
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const querySnapshot = await getDocs(collection(db, "inventory"));
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.current_count >= data.max_limit) {
+                stoppedItems.push(docSnap.id); // 例: "稲城:平箱"
+            }
+        });
+    } catch (error) {
+        console.error("在庫データの取得に失敗しました", error);
+    }
+    
+    const catSel = q(itemTpl.content, '.item-category');
+    Object.keys(categoryData).forEach(c => catSel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
+    
+    addOrder();
+});
 
 const updateOrders = () => {
     qa(container, '.order-block').forEach((block, i) => {
         const isFirst = i === 0;
         q(block, '.order-title').textContent = `【${i + 1}件目】`;
-        
         const sameArea = q(block, '.same-sender-area');
         if (sameArea) sameArea.style.display = isFirst ? 'none' : 'block';
-        
         const rmBtn = q(block, '.remove-order-btn');
         if (rmBtn) rmBtn.style.display = isFirst ? 'none' : 'block';
     });
@@ -207,18 +239,15 @@ const addOrder = () => {
     const items = q(clone, '.items-container');
     items.appendChild(itemTpl.content.cloneNode(true));
     q(items, '.remove-item-btn').style.display = 'none';
-    
     container.appendChild(clone);
     updateOrders();
 };
 
-addOrder();
 document.getElementById('addOrderBtn').addEventListener('click', addOrder);
 
 container.addEventListener('input', async e => {
     const t = e.target;
     const c = t.classList;
-    
     if (c.contains('to-zip') || c.contains('from-zip')) {
         t.value = t.value.replace(/-/g, '');
         if (t.value.length === 7) {
@@ -230,15 +259,10 @@ container.addEventListener('input', async e => {
                     const target = q(t.closest('.order-block'), c.contains('to-zip') ? '.to-addr-auto' : '.from-addr-auto');
                     target.value = `${r.address1}${r.address2}${r.address3}`;
                 }
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (err) { console.error(err); }
         }
     }
-    
-    if (c.contains('to-tel') || c.contains('from-tel')) {
-        t.value = t.value.replace(/-/g, '');
-    }
+    if (c.contains('to-tel') || c.contains('from-tel')) t.value = t.value.replace(/-/g, '');
 });
 
 const fmtTel = (tel) => {
@@ -257,35 +281,29 @@ container.addEventListener('change', e => {
     if (c.contains('item-category')) {
         const varSel = q(item, '.item-variety');
         varSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
-        (categoryData[t.value] || []).forEach(v => varSel.insertAdjacentHTML('beforeend', createOpt(v)));
-        
+        (categoryData[t.value] || []).forEach(v => varSel.insertAdjacentHTML('beforeend', `<option value="${v}">${v}</option>`));
         q(item, '.item-variety-group').style.display = 'block';
         q(item, '.item-size-group').style.display = 'none';
         q(item, '.item-quantity-group').style.display = 'none';
         q(item, '.item-size').innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
         q(item, '.item-desc').textContent = '';
-    }
-    else if (c.contains('item-variety')) {
+    } else if (c.contains('item-variety')) {
         const sizeSel = q(item, '.item-size');
         sizeSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
         (itemData[t.value] || []).forEach(s => sizeSel.insertAdjacentHTML('beforeend', createOpt(s, `${t.value}:${s}`)));
-        
         q(item, '.item-size-group').style.display = 'block';
         q(item, '.item-quantity-group').style.display = 'none';
         q(item, '.item-desc').textContent = '';
-    }
-    else if (c.contains('item-size')) {
+    } else if (c.contains('item-size')) {
         const varVal = q(item, '.item-variety').value;
         const desc = itemDescData[`${varVal}:${t.value}`];
         q(item, '.item-desc').textContent = desc ? `※目安：${desc}` : '';
         q(item, '.item-quantity-group').style.display = 'block';
-    }
-    else if (c.contains('home-delivery-check')) {
+    } else if (c.contains('home-delivery-check')) {
         const inputs = q(block, '.sender-inputs');
         inputs.style.display = t.checked ? 'none' : 'block';
         qa(inputs, 'input').forEach(i => i.required = !t.checked);
-    }
-    else if (c.contains('same-sender-check')) {
+    } else if (c.contains('same-sender-check')) {
         const sec = q(block, '.sender-section');
         const homeChk = q(block, '.home-delivery-check').checked;
         sec.style.display = t.checked ? 'none' : 'block';
@@ -296,56 +314,96 @@ container.addEventListener('change', e => {
 container.addEventListener('click', e => {
     const t = e.target;
     const c = t.classList;
-    
     if (c.contains('add-item-btn')) {
         const items = q(t.closest('.order-block'), '.items-container');
         items.appendChild(itemTpl.content.cloneNode(true));
         qa(items, '.remove-item-btn').forEach(btn => btn.style.display = 'block');
-    }
-    else if (c.contains('remove-item-btn')) {
+    } else if (c.contains('remove-item-btn')) {
         const items = t.closest('.items-container');
         t.closest('.item-block').remove();
         if (items.children.length === 1) q(items, '.remove-item-btn').style.display = 'none';
-    }
-    else if (c.contains('remove-order-btn')) {
+    } else if (c.contains('remove-order-btn')) {
         t.closest('.order-block').remove();
         updateOrders();
     }
 });
 
-document.getElementById('deliveryForm').addEventListener('submit', e => {
+document.getElementById('deliveryForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const mailBody = [];
-    let fSender = {};
+    const submitBtn = q(document, '.submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '在庫確認中...';
 
-    qa(document, '.order-block').forEach((block, i) => {
-        const v = sel => q(block, sel).value;
-        const toZip = v('.to-zip'), toAddr = `${v('.to-addr-auto')}${v('.to-addr-detail')}`, toName = v('.to-name'), toTel = fmtTel(v('.to-tel'));
-        
-        const itemsText = Array.from(qa(block, '.item-block')).map((item, j) => 
-            ` ［品物${j + 1}］\r\n  品種：${q(item, '.item-variety').value}\r\n  箱サイズ：${q(item, '.item-size').value}\r\n  箱数：${q(item, '.item-quantity').value}箱`
-        ).join('\r\n');
-
-        const isSame = q(block, '.same-sender-check')?.checked;
-        const isHome = q(block, '.home-delivery-check').checked;
-        
-        if (i === 0) {
-            fSender = isHome ? { z: toZip, a: toAddr, n: toName, t: toTel } 
-                             : { z: v('.from-zip'), a: `${v('.from-addr-auto')}${v('.from-addr-detail')}`, n: v('.from-name'), t: fmtTel(v('.from-tel')) };
+    // 「品種:箱サイズ」単位で注文数を集計
+    let orderSummary = {};
+    qa(document, '.item-block').forEach(item => {
+        const variety = q(item, '.item-variety').value;
+        const size = q(item, '.item-size').value;
+        const qty = parseInt(q(item, '.item-quantity').value, 10);
+        if (variety && size && qty) {
+            const itemKey = `${variety}:${size}`;
+            orderSummary[itemKey] = (orderSummary[itemKey] || 0) + qty;
         }
-
-        let sText = isSame ? ` 郵便番号：${fSender.z}\r\n 住所：${fSender.a}\r\n お名前：${fSender.n}\r\n ご連絡先：${fSender.t}`
-                  : isHome ? ` ご本人`
-                  : ` 郵便番号：${v('.from-zip')}\r\n 住所：${v('.from-addr-auto')}${v('.from-addr-detail')}\r\n お名前：${v('.from-name')}\r\n ご連絡先：${fmtTel(v('.from-tel'))}`;
-
-        mailBody.push(`【${i + 1}件目】\r\n▼ 注文の品\r\n${itemsText}\r\n\r\n▼ 送り先\r\n 郵便番号：${toZip}\r\n 住所：${toAddr}\r\n お名前：${toName}\r\n ご連絡先：${toTel}\r\n\r\n▼ ご依頼主\r\n${sText}\r\n\r\n--------------------------------------`);
     });
 
-    const notes = document.getElementById('formNotes').value;
-    if (notes) mailBody.push(`▼ その他ご要望など\r\n${notes}\r\n\r\n--------------------------------------`);
+    try {
+        await runTransaction(db, async (transaction) => {
+            const updates = [];
+            for (const itemKey of Object.keys(orderSummary)) {
+                const docRef = doc(db, "inventory", itemKey);
+                const docSnap = await transaction.get(docRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const newCount = data.current_count + orderSummary[itemKey];
+                    if (newCount > data.max_limit) {
+                        const [vName, sName] = itemKey.split(':');
+                        throw `申し訳ありません。「${vName}（${sName}）」は予定数を超えてしまうためご注文いただけません。（残り：${data.max_limit - data.current_count}箱）`;
+                    }
+                    updates.push({ ref: docRef, count: newCount });
+                }
+            }
+            updates.forEach(u => transaction.update(u.ref, { current_count: u.count }));
+        });
 
-    window.location.href = `mailto:kayaen.nashi@gmail.com?subject=${encodeURIComponent("配送のご注文")}&body=${encodeURIComponent(mailBody.join('\r\n\r\n'))}`;
-    document.getElementById('statusMessage').style.display = 'block';
+        const mailBody = [];
+        let fSender = {};
+
+        qa(document, '.order-block').forEach((block, i) => {
+            const v = sel => q(block, sel).value;
+            const toZip = v('.to-zip'), toAddr = `${v('.to-addr-auto')}${v('.to-addr-detail')}`, toName = v('.to-name'), toTel = fmtTel(v('.to-tel'));
+            
+            const itemsText = Array.from(qa(block, '.item-block')).map((item, j) => 
+                ` ［品物${j + 1}］\r\n  品種：${q(item, '.item-variety').value}\r\n  箱サイズ：${q(item, '.item-size').value}\r\n  箱数：${q(item, '.item-quantity').value}箱`
+            ).join('\r\n');
+
+            const isSame = q(block, '.same-sender-check')?.checked;
+            const isHome = q(block, '.home-delivery-check').checked;
+            
+            if (i === 0) {
+                fSender = isHome ? { z: toZip, a: toAddr, n: toName, t: toTel } 
+                                 : { z: v('.from-zip'), a: `${v('.from-addr-auto')}${v('.from-addr-detail')}`, n: v('.from-name'), t: fmtTel(v('.from-tel')) };
+            }
+
+            let sText = isSame ? ` 郵便番号：${fSender.z}\r\n 住所：${fSender.a}\r\n お名前：${fSender.n}\r\n ご連絡先：${fSender.t}`
+                      : isHome ? ` ご本人`
+                      : ` 郵便番号：${v('.from-zip')}\r\n 住所：${v('.from-addr-auto')}${v('.from-addr-detail')}\r\n お名前：${v('.from-name')}\r\n ご連絡先：${fmtTel(v('.from-tel'))}`;
+
+            mailBody.push(`【${i + 1}件目】\r\n▼ 注文の品\r\n${itemsText}\r\n\r\n▼ 送り先\r\n 郵便番号：${toZip}\r\n 住所：${toAddr}\r\n お名前：${toName}\r\n ご連絡先：${toTel}\r\n\r\n▼ ご依頼主\r\n${sText}\r\n\r\n--------------------------------------`);
+        });
+
+        const notes = document.getElementById('formNotes').value;
+        if (notes) mailBody.push(`▼ その他ご要望など\r\n${notes}\r\n\r\n--------------------------------------`);
+
+        window.location.href = `mailto:kayaen.nashi@gmail.com?subject=${encodeURIComponent("配送のご注文")}&body=${encodeURIComponent(mailBody.join('\r\n\r\n'))}`;
+        document.getElementById('statusMessage').style.display = 'block';
+        submitBtn.textContent = 'メールソフトを起動しました';
+
+    } catch (error) {
+        alert(error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'メールを作成する';
+    }
 });
 </script>
 
