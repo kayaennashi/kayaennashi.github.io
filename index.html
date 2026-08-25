@@ -154,9 +154,8 @@
 </template>
 
 <script type="module">
-// 1. Firebaseの機能を読み込む（必須）
- import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js";
+  import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 
 // 2. プロジェクトの設定
 const firebaseConfig = {
