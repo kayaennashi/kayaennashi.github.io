@@ -171,7 +171,7 @@ const firebaseConfig = {
     
 // 3. アプリとデータベース(db)の初期化
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = getAnalytics(app);
 
 const categoryData = { 
     "梨": ["幸水", "豊水", "あきづき", "稲城", "新高"], 
