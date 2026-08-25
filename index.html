@@ -155,8 +155,8 @@
 
 <script type="module">
 // 1. Firebaseの機能を読み込む（必須）
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, runTransaction } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 
 // 2. プロジェクトの設定
 const firebaseConfig = {
