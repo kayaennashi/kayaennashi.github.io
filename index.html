@@ -154,10 +154,12 @@
 </template>
 
 <script type="module">
-  import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  // 1. Firebaseのコア機能とFirestoreを正しくインポートする
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"; // ★追加
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"; // ★getFirestoreを追加
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 
-// 2. プロジェクトの設定
+  // 2. プロジェクトの設定
 const firebaseConfig = {
     apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
     authDomain: "kayaenform.firebaseapp.com",
@@ -170,7 +172,8 @@ const firebaseConfig = {
     
 // 3. アプリとデータベース(db)の初期化
 const app = initializeApp(firebaseConfig);
-const db = getAnalytics(app);
+const db = getFirestore(app);
+const analytics = getAnalytics(app);
 
 const categoryData = { 
     "梨": ["幸水", "豊水", "あきづき", "稲城", "新高"], 
