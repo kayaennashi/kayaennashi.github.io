@@ -6,35 +6,6 @@
     <title>加弥園-kayaen- 配送依頼フォーム</title>
     <style>
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
-        .form-container { max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px■ 改善のポイント
-
-すべての箱サイズが受付停止となった場合、その品種自体の選択肢も停止するようロジックを追加しました。
-
-あわせてコード全体を見直し、以下の最適化を行っています。
-
-▼ 在庫判定の高速化
-・ 停止中の項目を保存する変数を配列（Array）から【Setオブジェクト】に変更しました。
-・ データ検索時の処理速度が向上します。
-
-▼ 品種単位の停止判定の追加
-・ 在庫データを取得した直後に、品種ごとの全箱サイズの在庫状況をチェックする処理を追加しました。
-・ すべての箱サイズが停止している品種は、新たな変数（stoppedVarieties）に記録します。
-
-▼ 画面描画（DOM操作）の最小化
-・ 選択肢（option）を追加する際、1行ずつHTMLを追加する処理を見直しました。
-・ 文字列として一括で結合し、1回の操作で画面に反映させることで処理負荷を減らしています。
-
-■ 変更後の全体コード
-
-```html
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加弥園-kayaen- 配送依頼フォーム</title>
-    <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
         .form-container { max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 30px; border-bottom: 2px solid #1abc9c; padding-bottom: 10px; }
         .order-block { background: #fdfdfd; border: 2px solid #e0e0e0; border-radius: 6px; padding: 20px; margin-bottom: 20px; position: relative; }
@@ -183,13 +154,13 @@
 </template>
 
 <script type="module">
-  import { initializeApp } from "[https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js](https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js)";
-  import { getFirestore, collection, getDocs, doc, runTransaction } from "[https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js)";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
     authDomain: "kayaenform.firebaseapp.com",
-    databaseURL: "[https://kayaenform-default-rtdb.firebaseio.com](https://kayaenform-default-rtdb.firebaseio.com)",
+    databaseURL: "https://kayaenform-default-rtdb.firebaseio.com",
     projectId: "kayaenform",
     storageBucket: "kayaenform.firebasestorage.app",
     messagingSenderId: "608399975787",
@@ -219,45 +190,22 @@ const itemDescData = {
     "高尾ぶどう:2kg箱": "3, 4房（大きさによる）", "高尾ぶどう:3kg箱": "4, 5房（大きさによる）"
 };
 
-// 検索速度向上のためSetを使用
 const stoppedItems = new Set();
 const stoppedVarieties = new Set();
 
 const q = (el, sel) => el.querySelector(sel);
 const qa = (el, sel) => el.querySelectorAll(sel);
 
-// optionタグ生成処理の共通化
 const createOpt = (val, isStop) => `<option value="${val}" ${isStop ? 'disabled' : ''}>${val}${isStop ? '（受付停止中）' : ''}</option>`;
 
 const itemTpl = document.getElementById('item-template');
 const orderTpl = document.getElementById('order-template');
 const container = document.getElementById('orders-container');
 
-// 種類プルダウンの初期設定
 const catSel = q(itemTpl.content, '.item-category');
 const catOpts = Object.keys(categoryData).map(c => `<option value="${c}">${c}</option>`).join('');
 catSel.insertAdjacentHTML('beforeend', catOpts);
 
-// 在庫データの取得と停止判定
-(async () => {
-    try {
-        const querySnapshot = await getDocs(collection(db, "inventory"));
-        querySnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            if (data.current_count >= data.max_limit) stoppedItems.add(docSnap.id);
-        });
-        
-        // 全箱サイズが停止中の品種を抽出
-        Object.entries(itemData).forEach(([variety, sizes]) => {
-            if (sizes.every(size => stoppedItems.has(`${variety}:${size}`))) {
-                stoppedVarieties.add(variety);
-            }
-        });
-    } catch (error) {
-        console.error("在庫データの取得に失敗しました", error);
-    }
-})();
-    
 const updateOrders = () => {
     qa(container, '.order-block').forEach((block, i) => {
         const isFirst = i === 0;
@@ -279,7 +227,31 @@ const addOrder = () => {
 };
 
 document.getElementById('addOrderBtn').addEventListener('click', addOrder);
-addOrder();
+
+// データを読み込んでから最初のフォームを描画する関数
+async function initializeForm() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "inventory"));
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.current_count >= data.max_limit) stoppedItems.add(docSnap.id);
+        });
+        
+        Object.entries(itemData).forEach(([variety, sizes]) => {
+            if (sizes.every(size => stoppedItems.has(`${variety}:${size}`))) {
+                stoppedVarieties.add(variety);
+            }
+        });
+    } catch (error) {
+        console.error("在庫データの取得に失敗しました", error);
+    } finally {
+        // データ取得の成否に関わらず、最後に1件目のフォームを描画する
+        addOrder();
+    }
+}
+
+// 画面読み込み時に初期化を実行
+initializeForm();
     
 container.addEventListener('input', async e => {
     const t = e.target;
@@ -288,7 +260,7 @@ container.addEventListener('input', async e => {
         t.value = t.value.replace(/-/g, '');
         if (t.value.length === 7) {
             try {
-                const res = await fetch(`[https://zipcloud.ibsnet.co.jp/api/search?zipcode=$](https://zipcloud.ibsnet.co.jp/api/search?zipcode=$){t.value}`);
+                const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${t.value}`);
                 const data = await res.json();
                 if (data.status === 200 && data.results) {
                     const r = data.results[0];
@@ -315,7 +287,6 @@ container.addEventListener('change', e => {
     const item = t.closest('.item-block');
     
     if (c.contains('item-category')) {
-        // 品種プルダウンの生成（一括処理）
         const varSel = q(item, '.item-variety');
         const opts = (categoryData[t.value] || []).map(v => createOpt(v, stoppedVarieties.has(v))).join('');
         varSel.innerHTML = `<option value="" disabled selected>選択してください</option>${opts}`;
@@ -327,7 +298,6 @@ container.addEventListener('change', e => {
         q(item, '.item-desc').textContent = '';
         
     } else if (c.contains('item-variety')) {
-        // 箱サイズプルダウンの生成（一括処理）
         const sizeSel = q(item, '.item-size');
         const opts = (itemData[t.value] || []).map(s => createOpt(s, stoppedItems.has(`${t.value}:${s}`))).join('');
         sizeSel.innerHTML = `<option value="" disabled selected>選択してください</option>${opts}`;
