@@ -207,7 +207,15 @@ const itemTpl = document.getElementById('item-template');
 const orderTpl = document.getElementById('order-template');
 const container = document.getElementById('orders-container');
 
-window.addEventListener('DOMContentLoaded', async () => {
+// テンプレートに種類（梨・ぶどう）の選択肢を即座にセットする
+const catSel = q(itemTpl.content, '.item-category');
+Object.keys(categoryData).forEach(c => catSel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
+
+// 初期状態として1件目を画面に表示する
+addOrder();
+
+// 画面の表示とは切り離し、裏側で非同期に在庫データを取得する
+(async () => {
     try {
         const querySnapshot = await getDocs(collection(db, "inventory"));
         querySnapshot.forEach((docSnap) => {
@@ -219,13 +227,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error("在庫データの取得に失敗しました", error);
     }
+})();
     
-    const catSel = q(itemTpl.content, '.item-category');
-    Object.keys(categoryData).forEach(c => catSel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
-    
-    addOrder();
-});
-
 const updateOrders = () => {
     qa(container, '.order-block').forEach((block, i) => {
         const isFirst = i === 0;
