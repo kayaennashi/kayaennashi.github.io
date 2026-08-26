@@ -204,6 +204,30 @@ const itemTpl = document.getElementById('item-template');
 const orderTpl = document.getElementById('order-template');
 const container = document.getElementById('orders-container');
 
+const getAvailableCount = (refKey, excludeItem) => {
+    const inv = inventoryData[refKey];
+    if (!inv) return 0;
+    
+    let remaining = inv.max_limit - inv.current_count;
+    
+    qa(document, '.item-block').forEach(item => {
+        if (item === excludeItem) return;
+        const variety = q(item, '.item-variety').value;
+        const size = q(item, '.item-size').value;
+        
+        if (variety && size) {
+            const k = size === "二段箱" ? `${variety}:平箱` : `${variety}:${size}`;
+            if (k === refKey) {
+                const req = size === "二段箱" ? 2 : 1;
+                const qty = parseInt(q(item, '.item-quantity').value, 10) || 1;
+                remaining -= (req * qty);
+            }
+        }
+    });
+    
+    return remaining;
+};
+
 const updateOrders = () => {
     qa(container, '.order-block').forEach((block, i) => {
         const isFirst = i === 0;
@@ -212,52 +236,6 @@ const updateOrders = () => {
         if (sameArea) sameArea.style.display = isFirst ? 'none' : 'block';
         const rmBtn = q(block, '.remove-order-btn');
         if (rmBtn) rmBtn.style.display = isFirst ? 'none' : 'block';
-    });
-};
-
-const updateGlobalMaxLimits = () => {
-    qa(document, '.item-block').forEach(item => {
-        const variety = q(item, '.item-variety').value;
-        const size = q(item, '.item-size').value;
-        const qtyInput = q(item, '.item-quantity');
-        
-        if (variety && size) {
-            const refKey = size === "二段箱" ? `${variety}:平箱` : `${variety}:${size}`;
-            const requiredPerBox = size === "二段箱" ? 2 : 1;
-            const inv = inventoryData[refKey];
-            
-            if (inv) {
-                const remaining = inv.max_limit - inv.current_count;
-                let otherConsumption = 0;
-                
-                qa(document, '.item-block').forEach(otherItem => {
-                    if (otherItem !== item) {
-                        const oVariety = q(otherItem, '.item-variety').value;
-                        const oSize = q(otherItem, '.item-size').value;
-                        if (oVariety && oSize) {
-                            const oRefKey = oSize === "二段箱" ? `${oVariety}:平箱` : `${oVariety}:${oSize}`;
-                            if (oRefKey === refKey) {
-                                const oRequired = oSize === "二段箱" ? 2 : 1;
-                                const oQty = parseInt(q(otherItem, '.item-quantity').value, 10) || 1;
-                                otherConsumption += oQty * oRequired;
-                            }
-                        }
-                    }
-                });
-
-                const availableForThis = remaining - otherConsumption;
-                let maxAllowed = Math.floor(availableForThis / requiredPerBox);
-                
-                if (maxAllowed < 1) maxAllowed = 1;
-                
-                qtyInput.max = maxAllowed;
-                
-                const currentVal = parseInt(qtyInput.value, 10);
-                if (!isNaN(currentVal) && currentVal > maxAllowed) {
-                    qtyInput.value = maxAllowed;
-                }
-            }
-        }
     });
 };
 
@@ -326,11 +304,28 @@ initializeForm();
 container.addEventListener('input', async e => {
     const t = e.target;
     const c = t.classList;
+    const item = t.closest('.item-block');
 
     if (c.contains('item-quantity')) {
         let val = parseInt(t.value, 10);
         if (isNaN(val) || val < 1) t.value = 1;
-        updateGlobalMaxLimits();
+        
+        const variety = q(item, '.item-variety').value;
+        const size = q(item, '.item-size').value;
+        
+        if (variety && size) {
+            const refKey = size === "二段箱" ? `${variety}:平箱` : `${variety}:${size}`;
+            const req = size === "二段箱" ? 2 : 1;
+            const avail = getAvailableCount(refKey, item);
+            let maxAllowed = Math.floor(avail / req);
+            
+            if (maxAllowed < 1) maxAllowed = 1;
+            
+            if (parseInt(t.value, 10) > maxAllowed) {
+                t.value = maxAllowed;
+            }
+            t.max = maxAllowed;
+        }
     }
 
     if (c.contains('to-zip') || c.contains('from-zip')) {
@@ -347,6 +342,7 @@ container.addEventListener('input', async e => {
             } catch (err) { console.error(err); }
         }
     }
+    
     if (c.contains('to-tel') || c.contains('from-tel')) t.value = t.value.replace(/-/g, '');
 });
 
@@ -365,7 +361,19 @@ container.addEventListener('change', e => {
     
     if (c.contains('item-category')) {
         const varSel = q(item, '.item-variety');
-        const opts = (categoryData[t.value] || []).map(v => createOpt(v, stoppedVarieties.has(v))).join('');
+        const opts = (categoryData[t.value] || []).map(v => {
+            let isStop = stoppedVarieties.has(v);
+            if (!isStop) {
+                const sizes = itemData[v] || [];
+                const hasAvailable = sizes.some(s => {
+                    const refKey = s === "二段箱" ? `${v}:平箱` : `${v}:${s}`;
+                    const req = s === "二段箱" ? 2 : 1;
+                    return getAvailableCount(refKey, item) >= req;
+                });
+                if (!hasAvailable) isStop = true;
+            }
+            return createOpt(v, isStop);
+        }).join('');
         varSel.innerHTML = `<option value="" disabled selected>選択してください</option>${opts}`;
         
         q(item, '.item-variety-group').style.display = 'block';
@@ -374,18 +382,22 @@ container.addEventListener('change', e => {
         q(item, '.item-size').innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
         q(item, '.item-desc').textContent = '';
         
-        updateGlobalMaxLimits();
-        
     } else if (c.contains('item-variety')) {
         const sizeSel = q(item, '.item-size');
-        const opts = (itemData[t.value] || []).map(s => createOpt(s, stoppedItems.has(`${t.value}:${s}`))).join('');
+        const opts = (itemData[t.value] || []).map(s => {
+            let isStop = stoppedItems.has(`${t.value}:${s}`);
+            if (!isStop) {
+                const refKey = s === "二段箱" ? `${t.value}:平箱` : `${t.value}:${s}`;
+                const req = s === "二段箱" ? 2 : 1;
+                isStop = getAvailableCount(refKey, item) < req;
+            }
+            return createOpt(s, isStop);
+        }).join('');
         sizeSel.innerHTML = `<option value="" disabled selected>選択してください</option>${opts}`;
         
         q(item, '.item-size-group').style.display = 'block';
         q(item, '.item-quantity-group').style.display = 'none';
         q(item, '.item-desc').textContent = '';
-        
-        updateGlobalMaxLimits();
         
     } else if (c.contains('item-size')) {
         const varVal = q(item, '.item-variety').value;
@@ -396,7 +408,18 @@ container.addEventListener('change', e => {
         const qtyGroup = q(item, '.item-quantity-group');
         qtyGroup.style.display = 'block';
 
-        updateGlobalMaxLimits();
+        const qtyInput = q(item, '.item-quantity');
+        const refKey = sizeVal === "二段箱" ? `${varVal}:平箱` : `${varVal}:${sizeVal}`;
+        const req = sizeVal === "二段箱" ? 2 : 1;
+        const avail = getAvailableCount(refKey, item);
+        let maxAllowed = Math.floor(avail / req);
+        
+        if (maxAllowed < 1) maxAllowed = 1;
+        qtyInput.max = maxAllowed;
+        
+        if (parseInt(qtyInput.value, 10) > maxAllowed) {
+            qtyInput.value = maxAllowed;
+        }
         
     } else if (c.contains('home-delivery-check')) {
         const inputs = q(block, '.sender-inputs');
@@ -414,19 +437,20 @@ container.addEventListener('change', e => {
 container.addEventListener('click', e => {
     const t = e.target;
     const c = t.classList;
+    
     if (c.contains('add-item-btn')) {
         const items = q(t.closest('.order-block'), '.items-container');
         items.appendChild(itemTpl.content.cloneNode(true));
         qa(items, '.remove-item-btn').forEach(btn => btn.style.display = 'block');
+        
     } else if (c.contains('remove-item-btn')) {
         const items = t.closest('.items-container');
         t.closest('.item-block').remove();
         if (items.children.length === 1) q(items, '.remove-item-btn').style.display = 'none';
-        updateGlobalMaxLimits();
+        
     } else if (c.contains('remove-order-btn')) {
         t.closest('.order-block').remove();
         updateOrders();
-        updateGlobalMaxLimits();
     }
 });
 
