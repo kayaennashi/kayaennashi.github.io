@@ -154,11 +154,9 @@
 </template>
 
 <script type="module">
-  // 1. Firebaseのコア機能とFirestoreを正しくインポートする
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import { getFirestore, collection, getDocs, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-  // 2. プロジェクトの設定
   const firebaseConfig = {
     apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
     authDomain: "kayaenform.firebaseapp.com",
@@ -170,7 +168,6 @@
     measurementId: "G-2Q0GD6J0LF"
   };
     
-  // 3. アプリとデータベース(db)の初期化
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app, "default");
 
@@ -193,39 +190,22 @@ const itemDescData = {
     "高尾ぶどう:2kg箱": "3, 4房（大きさによる）", "高尾ぶどう:3kg箱": "4, 5房（大きさによる）"
 };
 
-let stoppedItems = [];
+const stoppedItems = new Set();
+const stoppedVarieties = new Set();
 
 const q = (el, sel) => el.querySelector(sel);
 const qa = (el, sel) => el.querySelectorAll(sel);
 
-const createOpt = (val, fullKey = val) => {
-    const isStop = stoppedItems.includes(fullKey);
-    return `<option value="${val}" ${isStop ? 'disabled' : ''}>${val}${isStop ? '（受付停止中）' : ''}</option>`;
-};
+const createOpt = (val, isStop) => `<option value="${val}" ${isStop ? 'disabled' : ''}>${val}${isStop ? '（受付停止中）' : ''}</option>`;
 
 const itemTpl = document.getElementById('item-template');
 const orderTpl = document.getElementById('order-template');
 const container = document.getElementById('orders-container');
 
-// テンプレートに種類（梨・ぶどう）の選択肢を即座にセットする
 const catSel = q(itemTpl.content, '.item-category');
-Object.keys(categoryData).forEach(c => catSel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
+const catOpts = Object.keys(categoryData).map(c => `<option value="${c}">${c}</option>`).join('');
+catSel.insertAdjacentHTML('beforeend', catOpts);
 
-// 画面の表示とは切り離し、裏側で非同期に在庫データを取得する
-(async () => {
-    try {
-        const querySnapshot = await getDocs(collection(db, "inventory"));
-        querySnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            if (data.current_count >= data.max_limit) {
-                stoppedItems.push(docSnap.id);
-            }
-        });
-    } catch (error) {
-        console.error("在庫データの取得に失敗しました", error);
-    }
-})();
-    
 const updateOrders = () => {
     qa(container, '.order-block').forEach((block, i) => {
         const isFirst = i === 0;
@@ -248,8 +228,30 @@ const addOrder = () => {
 
 document.getElementById('addOrderBtn').addEventListener('click', addOrder);
 
-// ↓ ここに新しく追加します（機能が定義された後なら正常に動きます）
-addOrder();
+// データを読み込んでから最初のフォームを描画する関数
+async function initializeForm() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "inventory"));
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.current_count >= data.max_limit) stoppedItems.add(docSnap.id);
+        });
+        
+        Object.entries(itemData).forEach(([variety, sizes]) => {
+            if (sizes.every(size => stoppedItems.has(`${variety}:${size}`))) {
+                stoppedVarieties.add(variety);
+            }
+        });
+    } catch (error) {
+        console.error("在庫データの取得に失敗しました", error);
+    } finally {
+        // データ取得の成否に関わらず、最後に1件目のフォームを描画する
+        addOrder();
+    }
+}
+
+// 画面読み込み時に初期化を実行
+initializeForm();
     
 container.addEventListener('input', async e => {
     const t = e.target;
@@ -286,29 +288,35 @@ container.addEventListener('change', e => {
     
     if (c.contains('item-category')) {
         const varSel = q(item, '.item-variety');
-        varSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
-        (categoryData[t.value] || []).forEach(v => varSel.insertAdjacentHTML('beforeend', `<option value="${v}">${v}</option>`));
+        const opts = (categoryData[t.value] || []).map(v => createOpt(v, stoppedVarieties.has(v))).join('');
+        varSel.innerHTML = `<option value="" disabled selected>選択してください</option>${opts}`;
+        
         q(item, '.item-variety-group').style.display = 'block';
         q(item, '.item-size-group').style.display = 'none';
         q(item, '.item-quantity-group').style.display = 'none';
         q(item, '.item-size').innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
         q(item, '.item-desc').textContent = '';
+        
     } else if (c.contains('item-variety')) {
         const sizeSel = q(item, '.item-size');
-        sizeSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
-        (itemData[t.value] || []).forEach(s => sizeSel.insertAdjacentHTML('beforeend', createOpt(s, `${t.value}:${s}`)));
+        const opts = (itemData[t.value] || []).map(s => createOpt(s, stoppedItems.has(`${t.value}:${s}`))).join('');
+        sizeSel.innerHTML = `<option value="" disabled selected>選択してください</option>${opts}`;
+        
         q(item, '.item-size-group').style.display = 'block';
         q(item, '.item-quantity-group').style.display = 'none';
         q(item, '.item-desc').textContent = '';
+        
     } else if (c.contains('item-size')) {
         const varVal = q(item, '.item-variety').value;
         const desc = itemDescData[`${varVal}:${t.value}`];
         q(item, '.item-desc').textContent = desc ? `※目安：${desc}` : '';
         q(item, '.item-quantity-group').style.display = 'block';
+        
     } else if (c.contains('home-delivery-check')) {
         const inputs = q(block, '.sender-inputs');
         inputs.style.display = t.checked ? 'none' : 'block';
         qa(inputs, 'input').forEach(i => i.required = !t.checked);
+        
     } else if (c.contains('same-sender-check')) {
         const sec = q(block, '.sender-section');
         const homeChk = q(block, '.home-delivery-check').checked;
