@@ -154,13 +154,13 @@
 </template>
 
 <script type="module">
-  import { initializeApp } from "[https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js](https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js)";
-  import { getFirestore, collection, getDocs, doc, runTransaction } from "[https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js)";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
     authDomain: "kayaenform.firebaseapp.com",
-    databaseURL: "[https://kayaenform-default-rtdb.firebaseio.com](https://kayaenform-default-rtdb.firebaseio.com)",
+    databaseURL: "https://kayaenform-default-rtdb.firebaseio.com",
     projectId: "kayaenform",
     storageBucket: "kayaenform.firebasestorage.app",
     messagingSenderId: "608399975787",
@@ -285,8 +285,6 @@ container.addEventListener('input', async e => {
         let val = parseInt(t.value, 10);
         const max = parseInt(t.max, 10);
         if (!isNaN(val) && !isNaN(max) && val > max) {
-            // 【修正箇所】手入力時に上限を超えた場合のアラート
-            alert('受付予定数に達するため箱数の制限がございます。');
             t.value = max;
         }
     }
@@ -295,7 +293,7 @@ container.addEventListener('input', async e => {
         t.value = t.value.replace(/-/g, '');
         if (t.value.length === 7) {
             try {
-                const res = await fetch(`[https://zipcloud.ibsnet.co.jp/api/search?zipcode=$](https://zipcloud.ibsnet.co.jp/api/search?zipcode=$){t.value}`);
+                const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${t.value}`);
                 const data = await res.json();
                 if (data.status === 200 && data.results) {
                     const r = data.results[0];
@@ -360,8 +358,6 @@ container.addEventListener('change', e => {
             const maxBoxes = Math.floor(remaining / requiredPerBox);
             qtyInput.max = maxBoxes > 0 ? maxBoxes : 1;
             if (parseInt(qtyInput.value, 10) > qtyInput.max) {
-                // 【修正箇所】サイズ変更時に上限を超えていた場合のアラート
-                alert('受付予定数に達するため箱数の制限がございます。');
                 qtyInput.value = qtyInput.max;
             }
         }
