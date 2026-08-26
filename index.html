@@ -6,6 +6,35 @@
     <title>加弥園-kayaen- 配送依頼フォーム</title>
     <style>
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .form-container { max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px■ 改善のポイント
+
+すべての箱サイズが受付停止となった場合、その品種自体の選択肢も停止するようロジックを追加しました。
+
+あわせてコード全体を見直し、以下の最適化を行っています。
+
+▼ 在庫判定の高速化
+・ 停止中の項目を保存する変数を配列（Array）から【Setオブジェクト】に変更しました。
+・ データ検索時の処理速度が向上します。
+
+▼ 品種単位の停止判定の追加
+・ 在庫データを取得した直後に、品種ごとの全箱サイズの在庫状況をチェックする処理を追加しました。
+・ すべての箱サイズが停止している品種は、新たな変数（stoppedVarieties）に記録します。
+
+▼ 画面描画（DOM操作）の最小化
+・ 選択肢（option）を追加する際、1行ずつHTMLを追加する処理を見直しました。
+・ 文字列として一括で結合し、1回の操作で画面に反映させることで処理負荷を減らしています。
+
+■ 変更後の全体コード
+
+```html
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加弥園-kayaen- 配送依頼フォーム</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
         .form-container { max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 30px; border-bottom: 2px solid #1abc9c; padding-bottom: 10px; }
         .order-block { background: #fdfdfd; border: 2px solid #e0e0e0; border-radius: 6px; padding: 20px; margin-bottom: 20px; position: relative; }
