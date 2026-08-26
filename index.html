@@ -154,15 +154,13 @@
 </template>
 
 <script type="module">
-  // 1. Firebaseのコア機能とFirestoreを正しくインポートする
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import { getFirestore, collection, getDocs, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { initializeApp } from "[https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js](https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js)";
+  import { getFirestore, collection, getDocs, doc, runTransaction } from "[https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js)";
 
-  // 2. プロジェクトの設定
   const firebaseConfig = {
     apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
     authDomain: "kayaenform.firebaseapp.com",
-    databaseURL: "https://kayaenform-default-rtdb.firebaseio.com",
+    databaseURL: "[https://kayaenform-default-rtdb.firebaseio.com](https://kayaenform-default-rtdb.firebaseio.com)",
     projectId: "kayaenform",
     storageBucket: "kayaenform.firebasestorage.app",
     messagingSenderId: "608399975787",
@@ -170,7 +168,6 @@
     measurementId: "G-2Q0GD6J0LF"
   };
     
-  // 3. アプリとデータベース(db)の初期化
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app, "default");
 
@@ -193,32 +190,38 @@ const itemDescData = {
     "高尾ぶどう:2kg箱": "3, 4房（大きさによる）", "高尾ぶどう:3kg箱": "4, 5房（大きさによる）"
 };
 
-let stoppedItems = [];
+// 検索速度向上のためSetを使用
+const stoppedItems = new Set();
+const stoppedVarieties = new Set();
 
 const q = (el, sel) => el.querySelector(sel);
 const qa = (el, sel) => el.querySelectorAll(sel);
 
-const createOpt = (val, fullKey = val) => {
-    const isStop = stoppedItems.includes(fullKey);
-    return `<option value="${val}" ${isStop ? 'disabled' : ''}>${val}${isStop ? '（受付停止中）' : ''}</option>`;
-};
+// optionタグ生成処理の共通化
+const createOpt = (val, isStop) => `<option value="${val}" ${isStop ? 'disabled' : ''}>${val}${isStop ? '（受付停止中）' : ''}</option>`;
 
 const itemTpl = document.getElementById('item-template');
 const orderTpl = document.getElementById('order-template');
 const container = document.getElementById('orders-container');
 
-// テンプレートに種類（梨・ぶどう）の選択肢を即座にセットする
+// 種類プルダウンの初期設定
 const catSel = q(itemTpl.content, '.item-category');
-Object.keys(categoryData).forEach(c => catSel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
+const catOpts = Object.keys(categoryData).map(c => `<option value="${c}">${c}</option>`).join('');
+catSel.insertAdjacentHTML('beforeend', catOpts);
 
-// 画面の表示とは切り離し、裏側で非同期に在庫データを取得する
+// 在庫データの取得と停止判定
 (async () => {
     try {
         const querySnapshot = await getDocs(collection(db, "inventory"));
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            if (data.current_count >= data.max_limit) {
-                stoppedItems.push(docSnap.id);
+            if (data.current_count >= data.max_limit) stoppedItems.add(docSnap.id);
+        });
+        
+        // 全箱サイズが停止中の品種を抽出
+        Object.entries(itemData).forEach(([variety, sizes]) => {
+            if (sizes.every(size => stoppedItems.has(`${variety}:${size}`))) {
+                stoppedVarieties.add(variety);
             }
         });
     } catch (error) {
@@ -247,8 +250,6 @@ const addOrder = () => {
 };
 
 document.getElementById('addOrderBtn').addEventListener('click', addOrder);
-
-// ↓ ここに新しく追加します（機能が定義された後なら正常に動きます）
 addOrder();
     
 container.addEventListener('input', async e => {
@@ -258,7 +259,7 @@ container.addEventListener('input', async e => {
         t.value = t.value.replace(/-/g, '');
         if (t.value.length === 7) {
             try {
-                const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${t.value}`);
+                const res = await fetch(`[https://zipcloud.ibsnet.co.jp/api/search?zipcode=$](https://zipcloud.ibsnet.co.jp/api/search?zipcode=$){t.value}`);
                 const data = await res.json();
                 if (data.status === 200 && data.results) {
                     const r = data.results[0];
@@ -285,30 +286,38 @@ container.addEventListener('change', e => {
     const item = t.closest('.item-block');
     
     if (c.contains('item-category')) {
+        // 品種プルダウンの生成（一括処理）
         const varSel = q(item, '.item-variety');
-        varSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
-        (categoryData[t.value] || []).forEach(v => varSel.insertAdjacentHTML('beforeend', `<option value="${v}">${v}</option>`));
+        const opts = (categoryData[t.value] || []).map(v => createOpt(v, stoppedVarieties.has(v))).join('');
+        varSel.innerHTML = `<option value="" disabled selected>選択してください</option>${opts}`;
+        
         q(item, '.item-variety-group').style.display = 'block';
         q(item, '.item-size-group').style.display = 'none';
         q(item, '.item-quantity-group').style.display = 'none';
         q(item, '.item-size').innerHTML = '<option value="" disabled selected>品種を先に選択してください</option>';
         q(item, '.item-desc').textContent = '';
+        
     } else if (c.contains('item-variety')) {
+        // 箱サイズプルダウンの生成（一括処理）
         const sizeSel = q(item, '.item-size');
-        sizeSel.innerHTML = '<option value="" disabled selected>選択してください</option>';
-        (itemData[t.value] || []).forEach(s => sizeSel.insertAdjacentHTML('beforeend', createOpt(s, `${t.value}:${s}`)));
+        const opts = (itemData[t.value] || []).map(s => createOpt(s, stoppedItems.has(`${t.value}:${s}`))).join('');
+        sizeSel.innerHTML = `<option value="" disabled selected>選択してください</option>${opts}`;
+        
         q(item, '.item-size-group').style.display = 'block';
         q(item, '.item-quantity-group').style.display = 'none';
         q(item, '.item-desc').textContent = '';
+        
     } else if (c.contains('item-size')) {
         const varVal = q(item, '.item-variety').value;
         const desc = itemDescData[`${varVal}:${t.value}`];
         q(item, '.item-desc').textContent = desc ? `※目安：${desc}` : '';
         q(item, '.item-quantity-group').style.display = 'block';
+        
     } else if (c.contains('home-delivery-check')) {
         const inputs = q(block, '.sender-inputs');
         inputs.style.display = t.checked ? 'none' : 'block';
         qa(inputs, 'input').forEach(i => i.required = !t.checked);
+        
     } else if (c.contains('same-sender-check')) {
         const sec = q(block, '.sender-section');
         const homeChk = q(block, '.home-delivery-check').checked;
