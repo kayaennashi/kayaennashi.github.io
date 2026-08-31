@@ -114,7 +114,7 @@
             <input type="text" class="to-addr-detail" placeholder="例：1-2-3 メゾン稲城101" required>
         </div>
         <div class="form-group">
-            <label>お名前</label>
+            <label>お名前（姓と名の間にスペース）</label>
             <input type="text" class="to-name" placeholder="例：稲城 梨太郎" required>
         </div>
         <div class="form-group">
@@ -141,8 +141,8 @@
                     <input type="text" class="from-addr-detail" placeholder="例：2125-3" required>
                 </div>
                 <div class="form-group">
-                    <label>お名前</label>
-                    <input type="text" class="from-name" placeholder="例：稲城梨之助" required>
+                    <label>お名前（姓と名の間にスペース）</label>
+                    <input type="text" class="from-name" placeholder="例：稲城 梨之助" required>
                 </div>
                 <div class="form-group">
                     <label>電話番号（ハイフンなし）</label>
@@ -503,7 +503,7 @@ document.getElementById('deliveryForm').addEventListener('submit', async e => {
             const toZip = v('.to-zip'), toAddr = `${v('.to-addr-auto')}${v('.to-addr-detail')}`, toName = v('.to-name'), toTel = fmtTel(v('.to-tel'));
             
             const itemsText = Array.from(qa(block, '.item-block')).map((item, j) => 
-                ` ［品物${j + 1}］\r\n  品種：${q(item, '.item-variety').value}\r\n  箱サイズ：${q(item, '.item-size').value}\r\n  箱数：${q(item, '.item-quantity').value}箱`
+                ` [品物${j + 1}]\r\n  品種：${q(item, '.item-variety').value}\r\n  箱サイズ：${q(item, '.item-size').value}\r\n  箱数：${q(item, '.item-quantity').value}箱`
             ).join('\r\n');
 
             const isSame = q(block, '.same-sender-check')?.checked;
