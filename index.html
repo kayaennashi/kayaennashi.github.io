@@ -226,6 +226,7 @@ const getDynamicInventory = (currentItem) => {
 };
 
 const isItemStopped = (variety, size, dynInv) => {
+    if (Object.keys(inventoryData).length === 0) return false;
     const refKey = size === "二段箱" ? `${variety}:平箱` : `${variety}:${size}`;
     const req = size === "二段箱" ? 2 : 1;
     return dynInv[refKey] === undefined || dynInv[refKey] < req;
@@ -270,21 +271,30 @@ const updateGlobalMaxLimits = () => {
             const refKey = size === "二段箱" ? `${variety}:平箱` : `${variety}:${size}`;
             const requiredPerBox = size === "二段箱" ? 2 : 1;
             
+            if (Object.keys(inventoryData).length === 0) {
+                qtyInput.max = "";
+                qtyInput.min = 1;
+                if (qtyInput.value === "0") qtyInput.value = 1;
+                return;
+            }
+            
             const availableForThis = dynInv[refKey] !== undefined ? dynInv[refKey] : 0;
             const maxAllowed = Math.floor(availableForThis / requiredPerBox);
             
             if (maxAllowed < 1) {
                 qtyInput.max = 0;
                 qtyInput.min = 0;
-                if (parseInt(qtyInput.value, 10) > 0) qtyInput.value = 0;
+                qtyInput.value = 0;
             } else {
                 qtyInput.max = maxAllowed;
                 qtyInput.min = 1;
-                const currentVal = parseInt(qtyInput.value, 10);
-                if (isNaN(currentVal) || currentVal === 0) {
-                    qtyInput.value = 1;
-                } else if (currentVal > maxAllowed) {
-                    qtyInput.value = maxAllowed;
+                if (qtyInput.value !== "") {
+                    const currentVal = parseInt(qtyInput.value, 10);
+                    if (currentVal > maxAllowed) {
+                        qtyInput.value = maxAllowed;
+                    } else if (currentVal < 1) {
+                        qtyInput.value = 1;
+                    }
                 }
             }
         }
@@ -321,40 +331,23 @@ async function initializeForm() {
 }
 
 initializeForm();
+
+container.addEventListener('focusout', e => {
+    const t = e.target;
+    if (t.classList.contains('item-quantity')) {
+        if (t.value === "") {
+            const max = parseInt(t.max, 10);
+            t.value = (isNaN(max) || max >= 1) ? 1 : 0;
+            updateGlobalMaxLimits();
+        }
+    }
+});
     
 container.addEventListener('input', async e => {
     const t = e.target;
     const c = t.classList;
-    const item = t.closest('.item-block');
 
     if (c.contains('item-quantity')) {
-        let val = parseInt(t.value, 10);
-        
-        const dynInv = getDynamicInventory(item);
-        const variety = q(item, '.item-variety').value;
-        const size = q(item, '.item-size').value;
-        
-        if (variety && size) {
-            const refKey = size === "二段箱" ? `${variety}:平箱` : `${variety}:${size}`;
-            const req = size === "二段箱" ? 2 : 1;
-            const available = dynInv[refKey] !== undefined ? dynInv[refKey] : 0;
-            const maxAllowed = Math.floor(available / req);
-            
-            if (maxAllowed < 1) {
-                t.value = 0;
-                t.max = 0;
-                t.min = 0;
-            } else {
-                if (isNaN(val) || val < 1) {
-                    t.value = 1;
-                } else if (val > maxAllowed) {
-                    t.value = maxAllowed;
-                }
-                t.max = maxAllowed;
-                t.min = 1;
-            }
-        }
-        
         updateGlobalMaxLimits();
     }
 
@@ -420,32 +413,7 @@ container.addEventListener('change', e => {
         const desc = itemDescData[`${varVal}:${sizeVal}`];
         q(item, '.item-desc').textContent = desc ? `※目安：${desc}` : '';
         
-        const qtyGroup = q(item, '.item-quantity-group');
-        qtyGroup.style.display = 'block';
-
-        const dynInv = getDynamicInventory(item);
-        const refKey = sizeVal === "二段箱" ? `${varVal}:平箱` : `${varVal}:${sizeVal}`;
-        const req = sizeVal === "二段箱" ? 2 : 1;
-        const available = dynInv[refKey] || 0;
-        const maxAllowed = Math.floor(available / req);
-        
-        const qtyInput = q(item, '.item-quantity');
-        
-        if (maxAllowed < 1) {
-            qtyInput.value = 0;
-            qtyInput.max = 0;
-            qtyInput.min = 0;
-        } else {
-            qtyInput.max = maxAllowed;
-            qtyInput.min = 1;
-            const currentVal = parseInt(qtyInput.value, 10);
-            if (isNaN(currentVal) || currentVal < 1) {
-                qtyInput.value = 1;
-            } else if (currentVal > maxAllowed) {
-                qtyInput.value = maxAllowed;
-            }
-        }
-
+        q(item, '.item-quantity-group').style.display = 'block';
         updateGlobalMaxLimits();
         
     } else if (c.contains('home-delivery-check')) {
