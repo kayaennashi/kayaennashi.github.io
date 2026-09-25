@@ -18,7 +18,6 @@
         input:focus:not([readonly]), select:focus, textarea:focus { border-color: #1abc9c; outline: none; background-color: #f9fdfc; }
         input[readonly] { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; border: 1px solid #ddd; }
         input[readonly]:focus { outline: none; }
-        ::placeholder { color: #b3b3b3; }
         .same-sender-area, .home-delivery-area { background-color: #e8f8f5; padding: 12px; border-radius: 4px; margin-bottom: 15px; }
         .same-sender-area label, .home-delivery-area label { display: inline-block; margin: 0; cursor: pointer; color: #16a085; }
         .add-btn { display: block; width: 100%; padding: 12px; background-color: #fff; color: #1abc9c; border: 2px solid #1abc9c; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; transition: background 0.2s; }
@@ -108,14 +107,14 @@
         </div>
         <div class="form-group">
             <label>住所</label>
-            <input type="text" class="to-addr-auto" placeholder="自動入力" readonly tabindex="-1">
+            <input type="text" class="to-addr-auto" placeholder="郵便番号から自動入力されます" readonly tabindex="-1">
         </div>
         <div class="form-group">
             <label>番地・建物名など</label>
             <input type="text" class="to-addr-detail" placeholder="例：1-2-3 メゾン稲城101" required>
         </div>
         <div class="form-group">
-            <label>お名前（姓と名の間にスペース）</label>
+            <label>お名前</label>
             <input type="text" class="to-name" placeholder="例：稲城 梨太郎" required>
         </div>
         <div class="form-group">
@@ -135,15 +134,15 @@
                 </div>
                 <div class="form-group">
                     <label>住所</label>
-                    <input type="text" class="from-addr-auto" placeholder="自動入力" readonly tabindex="-1">
+                    <input type="text" class="from-addr-auto" placeholder="郵便番号から自動入力されます" readonly tabindex="-1">
                 </div>
                 <div class="form-group">
                     <label>番地・建物名など</label>
                     <input type="text" class="from-addr-detail" placeholder="例：2125-3" required>
                 </div>
                 <div class="form-group">
-                    <label>お名前（姓と名の間にスペース）</label>
-                    <input type="text" class="from-name" placeholder="例：稲城 梨之助" required>
+                    <label>お名前</label>
+                    <input type="text" class="from-name" placeholder="例：稲城梨之助" required>
                 </div>
                 <div class="form-group">
                     <label>電話番号（ハイフンなし）</label>
@@ -155,9 +154,8 @@
 </template>
 
 <script type="module">
-  // 更新用のAPIを外し、読み取り用のgetDocを追加しています。
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
@@ -180,7 +178,7 @@ const categoryData = {
 
 const itemData = { 
     "幸水": ["平箱", "二段箱"], "豊水": ["平箱", "二段箱"], "あきづき": ["平箱", "二段箱"], 
-    "稲城": ["平箱", "二段箱", "3kg箱", "特4kg箱"], "新高": ["平箱", "二段箱", "3kg箱", "特4kg箱", "特大2個入り"], 
+    "稲城": ["平箱", "二段箱", "3kg箱", "特4kg箱"], "新高": ["平箱", "二段箱", "3kg箱", "特4kg箱"], 
     "高尾ぶどう": ["2kg箱", "3kg箱"], "シャインマスカット": ["1kg箱", "2kg箱"], "富士の輝": ["1kg箱", "2kg箱"]
 };
 
@@ -227,7 +225,7 @@ const getDynamicInventory = (currentItem) => {
 };
 
 const isItemStopped = (variety, size, dynInv) => {
-    if (Object.keys(inventoryData).length === 0) return true;
+    if (Object.keys(inventoryData).length === 0) return false;
     const refKey = size === "二段箱" ? `${variety}:平箱` : `${variety}:${size}`;
     const req = size === "二段箱" ? 2 : 1;
     return dynInv[refKey] === undefined || dynInv[refKey] < req;
@@ -272,34 +270,11 @@ const updateGlobalMaxLimits = () => {
             const refKey = size === "二段箱" ? `${variety}:平箱` : `${variety}:${size}`;
             const requiredPerBox = size === "二段箱" ? 2 : 1;
             
-            if (Object.keys(inventoryData).length === 0) {
-                qtyInput.max = 0;
-                qtyInput.min = 0;
-                qtyInput.value = 0;
-                qtyInput.readOnly = true;
-                return;
-            }
-            
             const availableForThis = dynInv[refKey] !== undefined ? dynInv[refKey] : 0;
-            const maxAllowed = Math.floor(availableForThis / requiredPerBox);
+            let maxAllowed = Math.floor(availableForThis / requiredPerBox);
             
-            if (maxAllowed < 1) {
-                qtyInput.max = 0;
-                qtyInput.min = 0;
-                qtyInput.value = 0;
-                qtyInput.readOnly = true;
-            } else {
-                qtyInput.max = maxAllowed;
-                qtyInput.min = 1;
-                qtyInput.readOnly = false;
-                
-                if (qtyInput.value !== "") {
-                    const currentVal = parseInt(qtyInput.value, 10);
-                    if (currentVal > maxAllowed) {
-                        qtyInput.value = maxAllowed;
-                    }
-                }
-            }
+            if (maxAllowed < 1) maxAllowed = 1;
+            qtyInput.max = maxAllowed;
         }
     });
 };
@@ -334,38 +309,35 @@ async function initializeForm() {
 }
 
 initializeForm();
-
-container.addEventListener('focusout', e => {
-    const t = e.target;
-    if (t.classList.contains('item-quantity')) {
-        const max = parseInt(t.max, 10);
-        let val = parseInt(t.value, 10);
-        
-        if (isNaN(max) || max < 1) {
-            t.value = 0;
-        } else {
-            if (isNaN(val) || val < 1) {
-                t.value = 1;
-            } else if (val > max) {
-                t.value = max;
-            }
-        }
-        updateGlobalMaxLimits();
-    }
-});
     
 container.addEventListener('input', async e => {
     const t = e.target;
     const c = t.classList;
+    const item = t.closest('.item-block');
 
     if (c.contains('item-quantity')) {
-        if (t.value !== "") {
-            const max = parseInt(t.max, 10);
-            const val = parseInt(t.value, 10);
-            if (!isNaN(max) && val > max) {
-                t.value = max;
-            }
+        let val = parseInt(t.value, 10);
+        if (isNaN(val) || val < 1) {
+            t.value = 1;
+            val = 1;
         }
+        
+        const dynInv = getDynamicInventory(item);
+        const variety = q(item, '.item-variety').value;
+        const size = q(item, '.item-size').value;
+        
+        if (variety && size) {
+            const refKey = size === "二段箱" ? `${variety}:平箱` : `${variety}:${size}`;
+            const req = size === "二段箱" ? 2 : 1;
+            const available = dynInv[refKey] !== undefined ? dynInv[refKey] : 0;
+            const maxAllowed = Math.floor(available / req);
+            
+            if (val > maxAllowed && maxAllowed >= 1) {
+                t.value = maxAllowed;
+            }
+            t.max = maxAllowed < 1 ? 1 : maxAllowed;
+        }
+        
         updateGlobalMaxLimits();
     }
 
@@ -431,7 +403,18 @@ container.addEventListener('change', e => {
         const desc = itemDescData[`${varVal}:${sizeVal}`];
         q(item, '.item-desc').textContent = desc ? `※目安：${desc}` : '';
         
-        q(item, '.item-quantity-group').style.display = 'block';
+        const qtyGroup = q(item, '.item-quantity-group');
+        qtyGroup.style.display = 'block';
+
+        const dynInv = getDynamicInventory(item);
+        const refKey = sizeVal === "二段箱" ? `${varVal}:平箱` : `${varVal}:${sizeVal}`;
+        const req = sizeVal === "二段箱" ? 2 : 1;
+        const available = dynInv[refKey] || 0;
+        const maxAllowed = Math.floor(available / req);
+        
+        const qtyInput = q(item, '.item-quantity');
+        qtyInput.max = maxAllowed < 1 ? 1 : maxAllowed;
+
         updateGlobalMaxLimits();
         
     } else if (c.contains('home-delivery-check')) {
@@ -473,9 +456,6 @@ container.addEventListener('click', e => {
 
 document.getElementById('deliveryForm').addEventListener('submit', async e => {
     e.preventDefault();
-    
-    document.activeElement.blur();
-    
     const submitBtn = q(document, '.submit-btn');
     submitBtn.disabled = true;
     submitBtn.textContent = '在庫確認中...';
@@ -486,7 +466,7 @@ document.getElementById('deliveryForm').addEventListener('submit', async e => {
         const size = q(item, '.item-size').value;
         const qty = parseInt(q(item, '.item-quantity').value, 10);
         
-        if (variety && size && qty > 0) {
+        if (variety && size && qty) {
             const refKey = size === "二段箱" ? `${variety}:平箱` : `${variety}:${size}`;
             const consumption = size === "二段箱" ? qty * 2 : qty;
             orderSummary[refKey] = (orderSummary[refKey] || 0) + consumption;
@@ -494,24 +474,26 @@ document.getElementById('deliveryForm').addEventListener('submit', async e => {
     });
 
     try {
-        for (const refKey of Object.keys(orderSummary)) {
-            const docRef = doc(db, "inventory", refKey);
-            const docSnap = await getDoc(docRef);
-            
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                const newCount = data.current_count + orderSummary[refKey];
-                if (newCount > data.max_limit) {
-                    const remaining = data.max_limit - data.current_count;
-                    const [vName, sName] = refKey.split(':');
-                    const dispSize = sName === "平箱" ? "平箱/二段箱" : sName;
-                    throw `申し訳ありません。「${vName}（${dispSize}）」の在庫が不足しているためご注文いただけません。（現在注文可能な残数相当：${remaining}）\r\n※二段箱は平箱2箱分として計算されます。ご注文数を見直してください。`;
+        await runTransaction(db, async (transaction) => {
+            const updates = [];
+            for (const refKey of Object.keys(orderSummary)) {
+                const docRef = doc(db, "inventory", refKey);
+                const docSnap = await transaction.get(docRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const newCount = data.current_count + orderSummary[refKey];
+                    if (newCount > data.max_limit) {
+                        const remaining = data.max_limit - data.current_count;
+                        const [vName, sName] = refKey.split(':');
+                        const dispSize = sName === "平箱" ? "平箱/二段箱" : sName;
+                        throw `申し訳ありません。「${vName}（${dispSize}）」の在庫が不足しているためご注文いただけません。（現在注文可能な残数相当：${remaining}）\r\n※二段箱は平箱2箱分として計算されます。ご注文数を見直してください。`;
+                    }
+                    updates.push({ ref: docRef, count: newCount });
                 }
-            } else {
-                const [vName] = refKey.split(':');
-                throw `申し訳ありません。「${vName}」の在庫データが見つかりません。`;
             }
-        }
+            updates.forEach(u => transaction.update(u.ref, { current_count: u.count }));
+        });
 
         const mailBody = [];
         let fSender = {};
@@ -520,10 +502,8 @@ document.getElementById('deliveryForm').addEventListener('submit', async e => {
             const v = sel => q(block, sel).value;
             const toZip = v('.to-zip'), toAddr = `${v('.to-addr-auto')}${v('.to-addr-detail')}`, toName = v('.to-name'), toTel = fmtTel(v('.to-tel'));
             
-            const itemsText = Array.from(qa(block, '.item-block'))
-                .filter(item => parseInt(q(item, '.item-quantity').value, 10) > 0)
-                .map((item, j) => 
-                ` [品物${j + 1}]\r\n  品種：${q(item, '.item-variety').value}\r\n  箱サイズ：${q(item, '.item-size').value}\r\n  箱数：${q(item, '.item-quantity').value}箱`
+            const itemsText = Array.from(qa(block, '.item-block')).map((item, j) => 
+                ` ［品物${j + 1}］\r\n  品種：${q(item, '.item-variety').value}\r\n  箱サイズ：${q(item, '.item-size').value}\r\n  箱数：${q(item, '.item-quantity').value}箱`
             ).join('\r\n');
 
             const isSame = q(block, '.same-sender-check')?.checked;
