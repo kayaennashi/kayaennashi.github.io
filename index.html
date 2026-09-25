@@ -155,8 +155,9 @@
 </template>
 
 <script type="module">
+  // 更新用のAPIを外し、読み取り用のgetDocを追加しています。
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import { getFirestore, collection, getDocs, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDW6QfBHJMrxa1wxY7YwHKdUrRTAmgzxnA",
@@ -226,7 +227,7 @@ const getDynamicInventory = (currentItem) => {
 };
 
 const isItemStopped = (variety, size, dynInv) => {
-    if (Object.keys(inventoryData).length === 0) return false;
+    if (Object.keys(inventoryData).length === 0) return true;
     const refKey = size === "二段箱" ? `${variety}:平箱` : `${variety}:${size}`;
     const req = size === "二段箱" ? 2 : 1;
     return dynInv[refKey] === undefined || dynInv[refKey] < req;
@@ -272,9 +273,10 @@ const updateGlobalMaxLimits = () => {
             const requiredPerBox = size === "二段箱" ? 2 : 1;
             
             if (Object.keys(inventoryData).length === 0) {
-                qtyInput.max = "";
-                qtyInput.min = 1;
-                if (qtyInput.value === "0") qtyInput.value = 1;
+                qtyInput.max = 0;
+                qtyInput.min = 0;
+                qtyInput.value = 0;
+                qtyInput.readOnly = true;
                 return;
             }
             
@@ -285,15 +287,16 @@ const updateGlobalMaxLimits = () => {
                 qtyInput.max = 0;
                 qtyInput.min = 0;
                 qtyInput.value = 0;
+                qtyInput.readOnly = true;
             } else {
                 qtyInput.max = maxAllowed;
                 qtyInput.min = 1;
+                qtyInput.readOnly = false;
+                
                 if (qtyInput.value !== "") {
                     const currentVal = parseInt(qtyInput.value, 10);
                     if (currentVal > maxAllowed) {
                         qtyInput.value = maxAllowed;
-                    } else if (currentVal < 1) {
-                        qtyInput.value = 1;
                     }
                 }
             }
@@ -335,11 +338,19 @@ initializeForm();
 container.addEventListener('focusout', e => {
     const t = e.target;
     if (t.classList.contains('item-quantity')) {
-        if (t.value === "") {
-            const max = parseInt(t.max, 10);
-            t.value = (isNaN(max) || max >= 1) ? 1 : 0;
-            updateGlobalMaxLimits();
+        const max = parseInt(t.max, 10);
+        let val = parseInt(t.value, 10);
+        
+        if (isNaN(max) || max < 1) {
+            t.value = 0;
+        } else {
+            if (isNaN(val) || val < 1) {
+                t.value = 1;
+            } else if (val > max) {
+                t.value = max;
+            }
         }
+        updateGlobalMaxLimits();
     }
 });
     
@@ -348,6 +359,13 @@ container.addEventListener('input', async e => {
     const c = t.classList;
 
     if (c.contains('item-quantity')) {
+        if (t.value !== "") {
+            const max = parseInt(t.max, 10);
+            const val = parseInt(t.value, 10);
+            if (!isNaN(max) && val > max) {
+                t.value = max;
+            }
+        }
         updateGlobalMaxLimits();
     }
 
@@ -455,6 +473,9 @@ container.addEventListener('click', e => {
 
 document.getElementById('deliveryForm').addEventListener('submit', async e => {
     e.preventDefault();
+    
+    document.activeElement.blur();
+    
     const submitBtn = q(document, '.submit-btn');
     submitBtn.disabled = true;
     submitBtn.textContent = '在庫確認中...';
@@ -473,26 +494,24 @@ document.getElementById('deliveryForm').addEventListener('submit', async e => {
     });
 
     try {
-        await runTransaction(db, async (transaction) => {
-            const updates = [];
-            for (const refKey of Object.keys(orderSummary)) {
-                const docRef = doc(db, "inventory", refKey);
-                const docSnap = await transaction.get(docRef);
-                
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    const newCount = data.current_count + orderSummary[refKey];
-                    if (newCount > data.max_limit) {
-                        const remaining = data.max_limit - data.current_count;
-                        const [vName, sName] = refKey.split(':');
-                        const dispSize = sName === "平箱" ? "平箱/二段箱" : sName;
-                        throw `申し訳ありません。「${vName}（${dispSize}）」の在庫が不足しているためご注文いただけません。（現在注文可能な残数相当：${remaining}）\r\n※二段箱は平箱2箱分として計算されます。ご注文数を見直してください。`;
-                    }
-                    updates.push({ ref: docRef, count: newCount });
+        for (const refKey of Object.keys(orderSummary)) {
+            const docRef = doc(db, "inventory", refKey);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const newCount = data.current_count + orderSummary[refKey];
+                if (newCount > data.max_limit) {
+                    const remaining = data.max_limit - data.current_count;
+                    const [vName, sName] = refKey.split(':');
+                    const dispSize = sName === "平箱" ? "平箱/二段箱" : sName;
+                    throw `申し訳ありません。「${vName}（${dispSize}）」の在庫が不足しているためご注文いただけません。（現在注文可能な残数相当：${remaining}）\r\n※二段箱は平箱2箱分として計算されます。ご注文数を見直してください。`;
                 }
+            } else {
+                const [vName] = refKey.split(':');
+                throw `申し訳ありません。「${vName}」の在庫データが見つかりません。`;
             }
-            updates.forEach(u => transaction.update(u.ref, { current_count: u.count }));
-        });
+        }
 
         const mailBody = [];
         let fSender = {};
