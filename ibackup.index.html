@@ -18,6 +18,7 @@
         input:focus:not([readonly]), select:focus, textarea:focus { border-color: #1abc9c; outline: none; background-color: #f9fdfc; }
         input[readonly] { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; border: 1px solid #ddd; }
         input[readonly]:focus { outline: none; }
+        ::placeholder { color: #b3b3b3; }
         .same-sender-area, .home-delivery-area { background-color: #e8f8f5; padding: 12px; border-radius: 4px; margin-bottom: 15px; }
         .same-sender-area label, .home-delivery-area label { display: inline-block; margin: 0; cursor: pointer; color: #16a085; }
         .add-btn { display: block; width: 100%; padding: 12px; background-color: #fff; color: #1abc9c; border: 2px solid #1abc9c; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; transition: background 0.2s; }
@@ -107,14 +108,14 @@
         </div>
         <div class="form-group">
             <label>住所</label>
-            <input type="text" class="to-addr-auto" placeholder="郵便番号から自動入力されます" readonly tabindex="-1">
+            <input type="text" class="to-addr-auto" placeholder="自動入力" readonly tabindex="-1">
         </div>
         <div class="form-group">
             <label>番地・建物名など</label>
             <input type="text" class="to-addr-detail" placeholder="例：1-2-3 メゾン稲城101" required>
         </div>
         <div class="form-group">
-            <label>お名前</label>
+            <label>お名前（姓と名の間にスペース）</label>
             <input type="text" class="to-name" placeholder="例：稲城 梨太郎" required>
         </div>
         <div class="form-group">
@@ -134,15 +135,15 @@
                 </div>
                 <div class="form-group">
                     <label>住所</label>
-                    <input type="text" class="from-addr-auto" placeholder="郵便番号から自動入力されます" readonly tabindex="-1">
+                    <input type="text" class="from-addr-auto" placeholder="自動入力" readonly tabindex="-1">
                 </div>
                 <div class="form-group">
                     <label>番地・建物名など</label>
                     <input type="text" class="from-addr-detail" placeholder="例：2125-3" required>
                 </div>
                 <div class="form-group">
-                    <label>お名前</label>
-                    <input type="text" class="from-name" placeholder="例：稲城梨之助" required>
+                    <label>お名前（姓と名の間にスペース）</label>
+                    <input type="text" class="from-name" placeholder="例：稲城 梨之助" required>
                 </div>
                 <div class="form-group">
                     <label>電話番号（ハイフンなし）</label>
@@ -178,7 +179,7 @@ const categoryData = {
 
 const itemData = { 
     "幸水": ["平箱", "二段箱"], "豊水": ["平箱", "二段箱"], "あきづき": ["平箱", "二段箱"], 
-    "稲城": ["平箱", "二段箱", "3kg箱", "特4kg箱"], "新高": ["平箱", "二段箱", "3kg箱", "特4kg箱"], 
+    "稲城": ["平箱", "二段箱", "3kg箱", "特4kg箱"], "新高": ["平箱", "二段箱", "3kg箱", "特4kg箱", "特大2個入り"], 
     "高尾ぶどう": ["2kg箱", "3kg箱"], "シャインマスカット": ["1kg箱", "2kg箱"], "富士の輝": ["1kg箱", "2kg箱"]
 };
 
@@ -503,7 +504,7 @@ document.getElementById('deliveryForm').addEventListener('submit', async e => {
             const toZip = v('.to-zip'), toAddr = `${v('.to-addr-auto')}${v('.to-addr-detail')}`, toName = v('.to-name'), toTel = fmtTel(v('.to-tel'));
             
             const itemsText = Array.from(qa(block, '.item-block')).map((item, j) => 
-                ` ［品物${j + 1}］\r\n  品種：${q(item, '.item-variety').value}\r\n  箱サイズ：${q(item, '.item-size').value}\r\n  箱数：${q(item, '.item-quantity').value}箱`
+                ` [品物${j + 1}]\r\n  品種：${q(item, '.item-variety').value}\r\n  箱サイズ：${q(item, '.item-size').value}\r\n  箱数：${q(item, '.item-quantity').value}箱`
             ).join('\r\n');
 
             const isSame = q(block, '.same-sender-check')?.checked;
